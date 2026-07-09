@@ -5,7 +5,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
-import figurefirst as fifi
 from utils import fly_plot_lib as fpl
 from utils import util
 
@@ -228,6 +227,7 @@ def plot_trajectory_error_variance(data_dict, states, sensors, time_steps,
                                    log_tick_low=-2, log_tick_high=6):
     """ Plot.
     """
+    import figurefirst as fifi
 
     cmap = Colormaps(color_dict='inferno', power=1, flip_linear=False, flip_log=True)
 
