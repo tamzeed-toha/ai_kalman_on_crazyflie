@@ -71,9 +71,15 @@ BATTERY_SOFT_LAND_V = 3.3
 BATTERY_HARD_ABORT_V = 3.0
 
 # ---------------------------------------------------------------------------
-# Multiranger obstacle-stop thresholds (mirrors bisccits/config.py defaults)
+# Multiranger obstacle-stop thresholds
 # ---------------------------------------------------------------------------
-OBSTACLE_STOP_M = 0.35
+# Sized for stopping distance, not just "mirrors bisccits' 0.35m default": trajectories.py's
+# top commanded speed is now ~1.0 m/s (accel_decel_pulse "fast" entries, zigzag legs). Stopping
+# distance ~= v^2/(2*decel); at 1.0 m/s with a ~1.5 m/s^2 braking deceleration that's ~0.33m, so
+# 0.35m would leave almost no margin. Raised to 0.45m. Vertical speed is unchanged by that
+# widening (only vertical_bob commands height directly, and it's still slow), so UP_STOP_M is
+# untouched.
+OBSTACLE_STOP_M = 0.45
 UP_STOP_M = 0.20
 
 # ---------------------------------------------------------------------------
@@ -84,8 +90,11 @@ GEOFENCE_Y_M = (-1.5, 1.5)
 GEOFENCE_Z_M = (0.15, 1.3)
 
 # Soft-clamp begins this far inside each bound; hard abort-and-return triggers this
-# factor beyond the bound.
-GEOFENCE_SOFT_MARGIN_M = 0.2
+# factor beyond the bound. Raised from 0.2 to 0.4m alongside OBSTACLE_STOP_M above, for the same
+# stopping-distance reason -- momentum at ~1.0 m/s needs more room to bleed off before the hard
+# bound than a 0.2m margin gives. trajectories.py's accel_decel_pulse "fast" and zigzag entries
+# were deliberately sized (see comments there) to stay inside the resulting +-1.1m soft interior.
+GEOFENCE_SOFT_MARGIN_M = 0.4
 GEOFENCE_ABORT_FACTOR = 1.2
 
 # ---------------------------------------------------------------------------

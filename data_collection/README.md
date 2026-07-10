@@ -7,10 +7,19 @@ collection -- the z-ranger stays on throughout and is logged as the reference/la
 Disabling it is future work (Phase 8), not part of this script.
 
 Scoped for **at most 15 flights, ~5 minutes of battery life each** (~75 min total). The default
-trajectory library (~38 specs, ~108 rep-instances) takes on the order of 20-25 minutes of active
-flight time at its default parameters, leaving generous margin for aborted/re-flown reps or
-added reps. Per elaborate_plan.md's own design, this real flight data is meant to fine-tune and
-validate a model pretrained on Phase 2's simulated data -- not to train an ANN from scratch.
+trajectory library (48 specs, 146 rep-instances) takes ~16 minutes of active flight time at its
+default parameters, leaving generous margin for aborted/re-flown reps or added reps. Per
+elaborate_plan.md's own design, this real flight data is meant to fine-tune and validate a model
+pretrained on Phase 2's simulated data -- not to train an ANN from scratch.
+
+Speed envelope: most motifs stay under 0.5 m/s, but `accel_decel_pulse`'s "fast" entries and the
+`zigzag` motif reach up to **1.0 m/s / 1.5 m/s^2** -- deliberately widened to bracket a
+representative deployment scenario (e.g. ~1 m/s zig-zag maneuvering) rather than leaving the
+data-driven filter to extrapolate outside its training range. Every spec's footprint is verified
+(via numeric integration of its velocity profile) to stay inside the geofence's soft-clamp
+interior before being added -- rerun that check after editing any motif parameters; see the
+comments above `build_trajectory_library()`'s accel_decel_pulse/zigzag sections in
+`trajectories.py`.
 
 ## Hardware checklist (confirm before flying)
 
@@ -43,12 +52,27 @@ validate a model pretrained on Phase 2's simulated data -- not to train an ANN f
    real flight is untested on this radio link -- if this bench test shows dropped packets or
    errors, reduce rates in `config.py` before flying: drop the `baro` block first, then halve
    `imu`/`flow` from 100 -> 50 Hz.
-3. Props-off bench test: connect, arm, verify `send_hover_setpoint` round-trips as expected
-   and land/disarm cleanly.
-4. First real flight: temporarily edit `trajectories.build_trajectory_library()` to only build
-   the `hover` specs and one low-`accel_mps2` `accel_decel_pulse` variant, fly supervised, and
-   check the resulting CSV (`data/session_<id>.csv`) and `data/progress_state.json` look right
-   before committing to the full unattended queue.
+3. **First real flight -- run the minimal smoke test:**
+   ```
+   python simple_flight_test.py
+   ```
+   Connects, arms, takes off to `config.DEFAULT_HEIGHT_M`, hovers 5s, nudges forward/back 0.3m,
+   lands, disarms -- using the same `FlightSessionLogger`/`config.LOG_BLOCKS` logging setup
+   `collect_data.py` depends on, but none of the trajectory-queue/safety-check machinery. Fly
+   this supervised, props-on, in your confirmed-safe space. Check the resulting
+   `data/session_<id>.csv` afterward: do `x/y/z_m`, `acc_*_g`, `zrange_m`, `battery_v` all
+   update sensibly over the flight, and do `event`/`flight_phase` show the expected
+   takeoff/hover/nudge/land sequence? Don't move on until this looks right.
+4. Once the smoke test looks clean, temporarily edit `trajectories.build_trajectory_library()`
+   to only build the `hover` specs and one low-`accel_mps2` `accel_decel_pulse` variant, fly
+   `collect_data.py` supervised, and check the resulting CSV and `data/progress_state.json`
+   look right before committing to the full unattended queue.
+5. The `accel_decel_fast_*` and `zigzag_*` entries are new/untested on real hardware (added to
+   reach ~1.0 m/s, vs. ~0.5 m/s for everything else) -- fly a couple of those specifically,
+   supervised, before trusting the full unattended queue at these speeds. Watch for the
+   obstacle-stop/geofence soft-clamp engaging sooner than expected (thresholds were raised to
+   `OBSTACLE_STOP_M=0.45m`/`GEOFENCE_SOFT_MARGIN_M=0.4m` for the higher speed, but that's a
+   calculation, not a flight-tested value yet).
 
 ## Running / resuming
 
@@ -86,3 +110,7 @@ See `elaborate_plan.md`-style risk callouts inline in `config.py`/`safety.py`/`t
 5. Default speeds/accelerations were extrapolated from `examples/bisccits`' brushed-CF2.1
    defaults -- verify the low end of each motif's parameter sweep flies stably on brushless
    before running the full unattended queue.
+6. `OBSTACLE_STOP_M=0.45m`/`GEOFENCE_SOFT_MARGIN_M=0.4m` were sized from a stopping-distance
+   calculation (`v^2/(2*decel)` at ~1.0 m/s / ~1.5 m/s^2 braking), not flight-tested -- confirm
+   the drone actually stops within that margin at top speed before relying on it as a safety
+   backstop.

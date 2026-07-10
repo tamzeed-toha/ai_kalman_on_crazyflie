@@ -207,6 +207,88 @@ def offset_turn_profile(params: dict, height_m: float) -> Tuple[float, Callable[
     return duration_s, vel_fn
 
 
+def _leg_peak_and_cruise(distance_m: float, target_speed_mps: float, accel_mps2: float) -> Tuple[float, float]:
+    """
+    Speed/cruise for a straight leg covering exactly distance_m: reaches target_speed_mps with
+    a cruise segment if there's room for a full trapezoid, otherwise falls back to a triangular
+    (no-cruise) profile whose achieved peak is below target_speed_mps -- covering exactly
+    distance_m either way, never overshooting into more room than the leg is allotted.
+    """
+    ramp_time_s = target_speed_mps / accel_mps2
+    min_dist_for_target = target_speed_mps * ramp_time_s
+    if distance_m >= min_dist_for_target:
+        return target_speed_mps, distance_m / target_speed_mps - ramp_time_s
+    return math.sqrt(distance_m * accel_mps2), 0.0
+
+
+def zigzag_profile(params: dict, height_m: float) -> Tuple[float, Callable[[float], VelCmd]]:
+    """
+    A direct, task-representative motif (as opposed to the systematic magnitude/duration sweeps
+    above): several straight legs alternating +/-zigzag_angle_deg off a fixed heading (no yaw --
+    body frame stays aligned with the initial heading throughout, so this is a "coverage/search
+    pattern" style zigzag, not a banked turn), each a trapezoidal (or triangular, if the leg is
+    too short to reach target_speed_mps at the given accel) speed profile, then a single computed
+    straight leg back to the start point.
+
+    leg_distance_m/zigzag_angle_deg/n_legs jointly determine the pattern's physical footprint --
+    tuned in build_trajectory_library() to stay safely inside the geofence's soft-clamp margin at
+    the higher speeds this motif targets (see config.py's GEOFENCE_SOFT_MARGIN_M/OBSTACLE_STOP_M,
+    both sized for this motif's top speed).
+    """
+    leg_distance_m = params.get("leg_distance_m", 0.4)
+    leg_speed_mps = params.get("leg_speed_mps", 1.0)
+    leg_accel_mps2 = params.get("leg_accel_mps2", 1.5)
+    n_legs = params.get("n_legs", 3)
+    zigzag_angle_deg = params.get("zigzag_angle_deg", 35.0)
+    corner_pause_s = params.get("corner_pause_s", 0.3)
+
+    leg_peak, leg_cruise_s = _leg_peak_and_cruise(leg_distance_m, leg_speed_mps, leg_accel_mps2)
+    leg_ramp_time_s = leg_peak / leg_accel_mps2
+    leg_duration_s = 2.0 * leg_ramp_time_s + leg_cruise_s
+    angle_rad = math.radians(zigzag_angle_deg)
+
+    legs: List[Tuple[float, float, float]] = []  # (start_t, end_t, angle_sign)
+    x, y = 0.0, 0.0
+    cum = 0.0
+    for i in range(n_legs):
+        sign = 1.0 if i % 2 == 0 else -1.0
+        legs.append((cum, cum + leg_duration_s, sign))
+        cum += leg_duration_s
+        x += leg_distance_m * math.cos(angle_rad)
+        y += sign * leg_distance_m * math.sin(angle_rad)
+        if i < n_legs - 1:
+            cum += corner_pause_s
+    outbound_end_t = cum
+    cum += corner_pause_s
+    return_start_t = cum
+
+    dist_home_m = math.hypot(x, y)
+    heading_home_rad = math.atan2(-y, -x) if dist_home_m > 1e-9 else 0.0
+    return_peak, return_cruise_s = _leg_peak_and_cruise(dist_home_m, leg_speed_mps, leg_accel_mps2)
+    return_ramp_time_s = return_peak / leg_accel_mps2 if return_peak > 0 else 0.0
+    return_duration_s = 2.0 * return_ramp_time_s + return_cruise_s
+    cum += return_duration_s
+    duration_s = cum
+
+    def vel_fn(t: float) -> VelCmd:
+        for idx, (start, end, sign) in enumerate(legs):
+            if start <= t < end:
+                speed = _trapezoid_speed(t - start, leg_ramp_time_s, leg_cruise_s, leg_peak)
+                vx = speed * math.cos(angle_rad)
+                vy = sign * speed * math.sin(angle_rad)
+                return VelCmd(vx, vy, 0.0, height_m, f"leg_{idx}")
+        if outbound_end_t <= t < return_start_t:
+            return VelCmd(0.0, 0.0, 0.0, height_m, "corner_pause")
+        if return_start_t <= t < duration_s:
+            speed = _trapezoid_speed(t - return_start_t, return_ramp_time_s, return_cruise_s, return_peak)
+            vx = speed * math.cos(heading_home_rad)
+            vy = speed * math.sin(heading_home_rad)
+            return VelCmd(vx, vy, 0.0, height_m, "return")
+        return VelCmd(0.0, 0.0, 0.0, height_m, "pause_end")
+
+    return duration_s, vel_fn
+
+
 def _integrate_residual_displacement(speed_fn: Callable[[float], float], duration_s: float, dt: float = 0.02) -> float:
     """Trapezoidal-rule integral of speed_fn over [0, duration_s]."""
     n_steps = max(1, int(duration_s / dt))
@@ -306,6 +388,7 @@ MOTIF_GENERATORS: Dict[str, Callable[[dict, float], Tuple[float, Callable[[float
     "offset_turn": offset_turn_profile,
     "sum_of_sines": sum_of_sines_profile,
     "mixed_free": mixed_free_profile,
+    "zigzag": zigzag_profile,
 }
 
 
@@ -313,9 +396,11 @@ MOTIF_GENERATORS: Dict[str, Callable[[dict, float], Tuple[float, Callable[[float
 # Library assembly
 # ---------------------------------------------------------------------------
 # Sized against a 15-flight / ~5-min-per-flight battery budget (~65-70 min usable flight
-# time after takeoff/landing overhead): ~108 total rep-instances below take roughly 20-25
-# min to fly at these parameters, leaving generous margin for aborted/re-flown reps. Bump
-# reps_required for accel_decel_pulse (the highest-value motif) first if more margin is used.
+# time after takeoff/landing overhead): ~146 total rep-instances below take ~16 min of active
+# flight time at these parameters (verify with a quick integration script after any edit here --
+# see chat history / adjacent comments for the technique), leaving generous margin for
+# aborted/re-flown reps. Bump reps_required for accel_decel_pulse/zigzag (the highest-value,
+# highest-speed motifs) first if more margin is used.
 
 def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[TrajectorySpec]:
     specs: List[TrajectorySpec] = []
@@ -346,6 +431,30 @@ def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[Traject
                     height_m=height_m,
                     reps_required=4,
                     description="Key motif: horizontal accel/decel pulse (z observable per paper's finding).",
+                ))
+
+    # Higher-speed/higher-accel additions, appended rather than blended into the sweep above so
+    # the already-flown-and-verified low-speed combos are untouched. Deliberately short/no-cruise
+    # (brief pulses, not sustained cruise) to reach ~0.75-1.0 m/s while keeping footprint safely
+    # inside the geofence's soft-clamp margin -- see the footprint math in the PR/chat history
+    # (or recompute via trajectories.MOTIF_GENERATORS + a quick integration script) before
+    # widening these further. Motivated by real deployment flight (e.g. ~1 m/s zig-zag
+    # maneuvering) being well outside the original 0.5 m/s / 0.8 m/s^2 envelope -- a data-driven
+    # filter shouldn't be asked to operate outside the range of conditions it was trained on.
+    for axis, accels, cruises, cap_mps in (("x", (1.0, 1.5), (0.0, 0.15), 1.0), ("y", (0.9, 1.2), (0.0, 0.15), 1.0)):
+        for accel_mps2 in accels:
+            for cruise_s in cruises:
+                peak_speed_mps = min(cap_mps, accel_mps2 * 0.75)
+                specs.append(TrajectorySpec(
+                    id=f"accel_decel_fast_a{accel_mps2:.2f}_c{cruise_s:.2f}_{axis}",
+                    motif_type="accel_decel_pulse",
+                    params={
+                        "accel_mps2": accel_mps2, "peak_speed_mps": peak_speed_mps,
+                        "cruise_s": cruise_s, "axis": axis,
+                    },
+                    height_m=height_m,
+                    reps_required=4,
+                    description="Higher-speed accel/decel pulse, bracketing faster deployment flight.",
                 ))
 
     for amplitude_m in (0.1, 0.2):
@@ -412,6 +521,27 @@ def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[Traject
             reps_required=2,
             max_duration_s=30.0,
             description="Curated concatenation of motifs, closer to unstructured real flight.",
+        ))
+
+    # Task-representative motif: a zig-zag coverage pattern approximating real deployment flight
+    # (e.g. ~1 m/s cruise with cornering accel/decel), as a direct example rather than only a
+    # systematic parameter sweep. leg_distance_m/n_legs/zigzag_angle_deg are tuned to keep the
+    # pattern's footprint safely inside the geofence soft-clamp margin at this speed -- do not
+    # widen them without rechecking the footprint (integrate vel_fn's vx/vy over time; see the
+    # accel_decel_pulse fast-additions comment above for why this matters).
+    zigzag_variants = [
+        {"leg_distance_m": 0.4, "leg_speed_mps": 1.0, "leg_accel_mps2": 1.5, "n_legs": 3, "zigzag_angle_deg": 35.0},
+        {"leg_distance_m": 0.35, "leg_speed_mps": 0.9, "leg_accel_mps2": 1.5, "n_legs": 3, "zigzag_angle_deg": 30.0},
+    ]
+    for idx, params in enumerate(zigzag_variants):
+        specs.append(TrajectorySpec(
+            id=f"zigzag_{idx}",
+            motif_type="zigzag",
+            params=params,
+            height_m=height_m,
+            reps_required=3,
+            max_duration_s=20.0,
+            description="Task-representative zig-zag coverage pattern at near-deployment speed.",
         ))
 
     return specs

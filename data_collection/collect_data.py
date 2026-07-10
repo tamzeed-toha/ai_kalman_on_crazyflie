@@ -87,17 +87,25 @@ def main() -> None:
                 while True:
                     if land_requested["flag"]:
                         end_reason = "interrupted"
+                        print("Landing: SIGINT was received before starting a new rep.")
                         break
                     if time.time() - session_start > config.MAX_SESSION_TIME_S:
                         end_reason = "max_session_time"
+                        print(f"Landing: max session time ({config.MAX_SESSION_TIME_S:.0f}s) reached.")
                         break
                     if not safety.battery_ok_to_start_rep(logger, config):
                         end_reason = "battery_low"
+                        print(
+                            f"Landing: battery ({logger.get_value('battery_v')} V) is below "
+                            f"the soft-land threshold ({config.BATTERY_SOFT_LAND_V} V) -- "
+                            f"refusing to start a new rep."
+                        )
                         break
 
                     traj_id, rep_index = state_store.get_next_incomplete(state)
                     if traj_id is None:
                         end_reason = "all_trajectories_complete"
+                        print("Landing: all trajectories in the library are complete.")
                         break
 
                     spec = specs_by_id[traj_id]
@@ -151,10 +159,21 @@ def main() -> None:
                             land_requested["flag"] = True
                             rep_status = "aborted"
                             rep_reason = safety_flag
+                            end_reason = f"safety:{safety_flag}"
+                            print(
+                                f"SAFETY LANDING: '{safety_flag}' triggered at t={t:.1f}s into "
+                                f"{traj_id} (battery={logger.get_value('battery_v')} V, "
+                                f"pos=({logger.get_value('x_m')}, {logger.get_value('y_m')}, "
+                                f"{logger.get_value('z_m')}))"
+                            )
                             break
                         if should_abort:
                             rep_status = "aborted"
                             rep_reason = safety_flag
+                            print(
+                                f"Rep aborted (not landing): '{safety_flag}' triggered at "
+                                f"t={t:.1f}s into {traj_id}"
+                            )
                             break
 
                         time.sleep(dt)
@@ -167,6 +186,10 @@ def main() -> None:
                     current_rep["rep_index"] = None
 
                     if land_requested["flag"]:
+                        # end_reason is already set to the real cause above if a safety check
+                        # triggered it; only fall back to "interrupted" if it's still unset,
+                        # which means this was a genuine SIGINT (no safety check runs between
+                        # reps, so that's the only other way land_requested gets set here).
                         end_reason = "interrupted" if end_reason == "unknown" else end_reason
                         break
 

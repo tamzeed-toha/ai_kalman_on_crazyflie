@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -87,13 +88,27 @@ def load_or_init_state(state_path: Path, specs: List[TrajectorySpec]) -> dict:
 
 
 def get_next_incomplete(state: dict) -> Tuple[Optional[str], Optional[int]]:
+    """
+    Randomly pick the next trajectory rep to fly, weighted by how many reps each trajectory
+    still has remaining (so a trajectory with 4 reps left is picked ~4x as often as one with 1
+    left). This is deliberate, not incidental: flying trajectories in a fixed order would let
+    motif type correlate with time-in-campaign (battery age, thermal drift, prop wear), which
+    would confound the collected data. Re-randomized on every call using live completion counts,
+    so this naturally spans battery swaps/re-runs without needing a separately persisted shuffle.
+    """
+    candidates: List[str] = []
     for traj_id in state["queue_order"]:
         entry = state["completed"].get(traj_id)
         if entry is None:
             continue
-        if entry["reps_completed"] < entry["reps_required"]:
-            return traj_id, entry["reps_completed"]
-    return None, None
+        remaining = entry["reps_required"] - entry["reps_completed"]
+        candidates.extend([traj_id] * remaining)
+
+    if not candidates:
+        return None, None
+
+    traj_id = random.choice(candidates)
+    return traj_id, state["completed"][traj_id]["reps_completed"]
 
 
 def mark_rep_result(
