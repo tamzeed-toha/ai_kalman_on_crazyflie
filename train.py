@@ -61,7 +61,7 @@ INPUT_COLUMNS = ['meas_r_x', 'meas_r_y', 'meas_v_x_dot', 'meas_v_y_dot']
 OUTPUT_COLUMN = 'state_z'
 
 DEFAULT_WINDOW_S = 2.0       # matches the reference paper's altitude-estimator window length
-DEFAULT_EPOCHS = 200
+DEFAULT_EPOCHS = 100
 DEFAULT_BATCH_SIZE = 64
 DEFAULT_TEST_FRACTION = 0.2
 DEFAULT_NOISE_STD = 0.01     # Gaussian input noise during training, paper-style
