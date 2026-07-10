@@ -8,10 +8,35 @@ acceleration* (speeding up/slowing down) -- not during hover or constant-velocit
 included specifically as a negative control (the paper predicts near-zero z-observability
 from vertical motion alone via this sensor set).
 
+Altitude sweep (added after the first 146-rep collection campaign showed 87% of real flights
+sitting within 1cm of the single fixed height that was used everywhere,
+DEFAULT_HEIGHT_M=0.4 -- see collect_data.py's call into build_trajectory_library()): an ANN
+altitude estimator trained on data with almost no z variation can satisfy its loss by
+predicting the training mean z, without ever learning a real flow-to-altitude relationship.
+The paper's own sensor-set observability result (Table 1) says z is only observable given
+horizontal acceleration, not given altitude variation alone -- so the fix isn't "fly at more
+heights in general", it's specifically "fly the accel/decel-carrying motifs across a spread of
+heights" (see ALTITUDE_SWEEP_M / ALTITUDE_SWEEP_SECONDARY_M below and their use in
+build_trajectory_library()). `hover`, `vertical_bob`, and `offset_turn` are deliberately left at
+the single default height: none of them produce the horizontal acceleration this sensor set
+needs to render z observable in the first place, so sweeping their height would add flight time
+without adding estimator training signal.
+
+`accel_decel_with_climb` goes one step further: it combines the accel/decel horizontal profile
+with a concurrent, slow, continuous altitude ramp within a *single* rep, so both the numerator
+(v_x) and denominator (z) of r_x = v_x/z vary together in one continuous trajectory. Cellini et
+al. never tested this combination -- their own altitude case study only paired accel/decel with
+a *fixed* altitude across repeated trials -- so treat this motif as a plausible engineering
+extension worth trying, not a validated finding from the paper.
+
 All motifs are built net-zero-displacement (a mirrored/computed return leg) since velocity-
 setpoint control has no absolute position feedback and many trajectories are chained in one
 flight with no independent ground truth to correct accumulated drift against (see safety.py's
-geofence, which is a backstop, not a guarantee).
+geofence, which is a backstop, not a guarantee). Altitude is the one exception:
+`accel_decel_with_climb` ends at a different height than it started (that's the point), so its
+TrajectorySpec.height_m is set to the *end* height, not the start -- collect_data.py uses
+spec.height_m for the interstitial hover immediately after the rep, and the drone is physically
+at the end height by then, not the start height.
 
 Every generator has the signature:
     generator(params: dict, height_m: float) -> (duration_s: float, vel_fn: Callable[[float], VelCmd])
@@ -31,6 +56,18 @@ import config
 
 DEFAULT_HEIGHT_M = config.DEFAULT_HEIGHT_M
 DEFAULT_MAX_REP_DURATION_S = config.DEFAULT_MAX_REP_DURATION_S
+
+# Altitude sweep for the accel/decel-carrying motifs (the ones the paper's Table 1 says can
+# actually render z observable via this sensor set -- see module docstring). Spans ~0.3-1.2m,
+# safely inside config.GEOFENCE_Z_M=(0.15, 1.3): at z=1.2m the geofence breach severity is
+# ~0.83 (1.0 = exactly at a hard bound, see safety.py:_axis_breach_severity), and at z=0.3m it's
+# ~0.74 -- both comfortably under the 1.0/1.2 soft/hard abort thresholds with margin to spare.
+ALTITUDE_SWEEP_M: Tuple[float, ...] = (0.3, 0.6, 0.9, 1.2)
+
+# A reduced sweep for the secondary accel-carrying motifs (sum_of_sines, zigzag) -- these get
+# altitude variety too since they also involve horizontal acceleration, but only 2 points
+# instead of 4 to keep the battery-time rebalance in build_trajectory_library() affordable.
+ALTITUDE_SWEEP_SECONDARY_M: Tuple[float, ...] = (0.3, 0.9)
 
 
 @dataclass(frozen=True)
@@ -116,6 +153,57 @@ def accel_decel_pulse_profile(params: dict, height_m: float) -> Tuple[float, Cal
         vx = speed if axis == "x" else 0.0
         vy = speed if axis == "y" else 0.0
         return VelCmd(vx, vy, 0.0, height_m, phase)
+
+    return duration_s, vel_fn
+
+
+def accel_decel_with_climb_profile(params: dict, height_m: float) -> Tuple[float, Callable[[float], VelCmd]]:
+    """
+    accel_decel_pulse's horizontal profile (same trapezoidal outbound/pause/return legs, reused
+    verbatim via _trapezoid_speed) plus a concurrent, slow, continuous altitude ramp from
+    climb_start_m to climb_end_m spanning the *entire* rep duration (not synced to any one
+    phase). That keeps the vertical rate constant and low relative to the horizontal accel/decel
+    event, so climbing doesn't dominate or confound the maneuver -- see module docstring for why
+    this combination (continuous z change concurrent with horizontal acceleration) is untested by
+    Cellini et al. and included here as an engineering extension, not a validated finding.
+
+    Net-zero-displacement horizontally like every other motif, but *not* net-zero vertically by
+    design -- climb_end_m != climb_start_m is the point. Callers should set the owning
+    TrajectorySpec.height_m to climb_end_m (see build_trajectory_library()), since that's where
+    the drone actually is when collect_data.py issues the post-rep interstitial hover.
+    """
+    accel_mps2 = params["accel_mps2"]
+    peak_speed_mps = params["peak_speed_mps"]
+    cruise_s = params.get("cruise_s", 0.0)
+    axis = params.get("axis", "x")
+    pause_s = params.get("pause_s", 0.5)
+    climb_start_m = params.get("climb_start_m", height_m)
+    climb_end_m = params.get("climb_end_m", height_m)
+
+    ramp_time_s = peak_speed_mps / accel_mps2
+    leg_s = 2.0 * ramp_time_s + cruise_s
+    duration_s = 2.0 * leg_s + 2.0 * pause_s
+
+    def vel_fn(t: float) -> VelCmd:
+        if t < leg_s:
+            speed = _trapezoid_speed(t, ramp_time_s, cruise_s, peak_speed_mps)
+            phase = "outbound"
+        elif t < leg_s + pause_s:
+            speed = 0.0
+            phase = "pause_mid"
+        elif t < 2.0 * leg_s + pause_s:
+            t2 = t - (leg_s + pause_s)
+            speed = -_trapezoid_speed(t2, ramp_time_s, cruise_s, peak_speed_mps)
+            phase = "return"
+        else:
+            speed = 0.0
+            phase = "pause_end"
+
+        vx = speed if axis == "x" else 0.0
+        vy = speed if axis == "y" else 0.0
+        climb_frac = min(1.0, t / duration_s) if duration_s > 0 else 1.0
+        h = climb_start_m + (climb_end_m - climb_start_m) * climb_frac
+        return VelCmd(vx, vy, 0.0, h, phase)
 
     return duration_s, vel_fn
 
@@ -384,6 +472,7 @@ def mixed_free_profile(params: dict, height_m: float) -> Tuple[float, Callable[[
 MOTIF_GENERATORS: Dict[str, Callable[[dict, float], Tuple[float, Callable[[float], VelCmd]]]] = {
     "hover": hover_profile,
     "accel_decel_pulse": accel_decel_pulse_profile,
+    "accel_decel_with_climb": accel_decel_with_climb_profile,
     "vertical_bob": vertical_bob_profile,
     "offset_turn": offset_turn_profile,
     "sum_of_sines": sum_of_sines_profile,
@@ -396,11 +485,21 @@ MOTIF_GENERATORS: Dict[str, Callable[[dict, float], Tuple[float, Callable[[float
 # Library assembly
 # ---------------------------------------------------------------------------
 # Sized against a 15-flight / ~5-min-per-flight battery budget (~65-70 min usable flight
-# time after takeoff/landing overhead): ~146 total rep-instances below take ~16 min of active
+# time after takeoff/landing overhead): ~144 total rep-instances below take ~16 min of active
 # flight time at these parameters (verify with a quick integration script after any edit here --
 # see chat history / adjacent comments for the technique), leaving generous margin for
-# aborted/re-flown reps. Bump reps_required for accel_decel_pulse/zigzag (the highest-value,
-# highest-speed motifs) first if more margin is used.
+# aborted/re-flown reps.
+#
+# Rebalanced for the altitude sweep (see module docstring): crossing accel_decel_pulse with
+# ALTITUDE_SWEEP_M (4 heights) would have quadrupled its rep-instances at the old
+# accel_mps2/cruise_s breadth and blown the budget, so that breadth was trimmed (low-speed: 4
+# accels x 3 cruises -> 2x2 for x-axis, 2x2 -> 1x2 for y-axis; fast: 2x2 -> 2x1 for both axes) and
+# reps_required dropped from 4 to 2 per (combo, height) pair -- height variety now supplies part
+# of the diversity the extra reps used to. sum_of_sines/zigzag got the same treatment with the
+# smaller 2-point ALTITUDE_SWEEP_SECONDARY_M. hover/vertical_bob/offset_turn/mixed_free are
+# unchanged from the original library (no height variation -- see module docstring for why).
+# Bump reps_required for accel_decel_pulse/zigzag/accel_decel_with_climb (the highest-value
+# motifs) first if more margin is used.
 
 def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[TrajectorySpec]:
     specs: List[TrajectorySpec] = []
@@ -415,47 +514,90 @@ def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[Traject
             description="Baseline: zero horizontal velocity, low-observability control condition.",
         ))
 
+    # Low-speed accel/decel sweep, now crossed with ALTITUDE_SWEEP_M (see module docstring): this
+    # is the motif the paper's Table 1 says can actually render z observable, so it's the one
+    # that most needs height variety to stop an ANN altitude estimator from learning "predict the
+    # training mean z" (the failure mode that motivated this sweep -- see collect_data.py). The
+    # accel_mps2/cruise_s combo breadth below is intentionally trimmed relative to the pre-sweep
+    # version (was 4 accels x 3 cruises for x, 2x2 for y) to pay for the 4x altitude multiplier
+    # within the same battery budget -- see the accounting comment above build_trajectory_library.
     for axis in ("x", "y"):
-        accels = (0.2, 0.4, 0.6, 0.8) if axis == "x" else (0.3, 0.6)
-        cruises = (0.0, 0.5, 1.0) if axis == "x" else (0.0, 0.5)
+        accels = (0.3, 0.6) if axis == "x" else (0.4,)
+        cruises = (0.0, 1.0) if axis == "x" else (0.0, 0.5)
         for accel_mps2 in accels:
             for cruise_s in cruises:
                 peak_speed_mps = min(0.5, accel_mps2 * 0.75)
-                specs.append(TrajectorySpec(
-                    id=f"accel_decel_a{accel_mps2:.2f}_c{cruise_s:.2f}_{axis}",
-                    motif_type="accel_decel_pulse",
-                    params={
-                        "accel_mps2": accel_mps2, "peak_speed_mps": peak_speed_mps,
-                        "cruise_s": cruise_s, "axis": axis,
-                    },
-                    height_m=height_m,
-                    reps_required=4,
-                    description="Key motif: horizontal accel/decel pulse (z observable per paper's finding).",
-                ))
+                for h in ALTITUDE_SWEEP_M:
+                    specs.append(TrajectorySpec(
+                        id=f"accel_decel_a{accel_mps2:.2f}_c{cruise_s:.2f}_{axis}_h{h:.2f}",
+                        motif_type="accel_decel_pulse",
+                        params={
+                            "accel_mps2": accel_mps2, "peak_speed_mps": peak_speed_mps,
+                            "cruise_s": cruise_s, "axis": axis,
+                        },
+                        height_m=h,
+                        reps_required=2,
+                        description=(
+                            "Key motif: horizontal accel/decel pulse (z observable per paper's "
+                            f"finding), flown at height={h:.2f}m for altitude-sweep coverage."
+                        ),
+                    ))
 
     # Higher-speed/higher-accel additions, appended rather than blended into the sweep above so
-    # the already-flown-and-verified low-speed combos are untouched. Deliberately short/no-cruise
-    # (brief pulses, not sustained cruise) to reach ~0.75-1.0 m/s while keeping footprint safely
-    # inside the geofence's soft-clamp margin -- see the footprint math in the PR/chat history
-    # (or recompute via trajectories.MOTIF_GENERATORS + a quick integration script) before
-    # widening these further. Motivated by real deployment flight (e.g. ~1 m/s zig-zag
-    # maneuvering) being well outside the original 0.5 m/s / 0.8 m/s^2 envelope -- a data-driven
-    # filter shouldn't be asked to operate outside the range of conditions it was trained on.
-    for axis, accels, cruises, cap_mps in (("x", (1.0, 1.5), (0.0, 0.15), 1.0), ("y", (0.9, 1.2), (0.0, 0.15), 1.0)):
+    # the low-speed combos above stay easy to reason about independently. Deliberately short/
+    # no-cruise (brief pulses, not sustained cruise) to reach ~0.75-1.0 m/s while keeping
+    # footprint safely inside the geofence's soft-clamp margin -- see the footprint math in the
+    # PR/chat history (or recompute via trajectories.MOTIF_GENERATORS + a quick integration
+    # script) before widening these further. Motivated by real deployment flight (e.g. ~1 m/s
+    # zig-zag maneuvering) being well outside the original 0.5 m/s / 0.8 m/s^2 envelope -- a
+    # data-driven filter shouldn't be asked to operate outside the range of conditions it was
+    # trained on. Also crossed with ALTITUDE_SWEEP_M for the same z-observability reason as the
+    # low-speed sweep above; the single no-cruise value below (cruise_s breadth was trimmed from
+    # 2 to 1) is what pays for the altitude multiplier here.
+    for axis, accels, cap_mps in (("x", (1.0, 1.5), 1.0), ("y", (0.9, 1.2), 1.0)):
         for accel_mps2 in accels:
-            for cruise_s in cruises:
-                peak_speed_mps = min(cap_mps, accel_mps2 * 0.75)
+            cruise_s = 0.0
+            peak_speed_mps = min(cap_mps, accel_mps2 * 0.75)
+            for h in ALTITUDE_SWEEP_M:
                 specs.append(TrajectorySpec(
-                    id=f"accel_decel_fast_a{accel_mps2:.2f}_c{cruise_s:.2f}_{axis}",
+                    id=f"accel_decel_fast_a{accel_mps2:.2f}_c{cruise_s:.2f}_{axis}_h{h:.2f}",
                     motif_type="accel_decel_pulse",
                     params={
                         "accel_mps2": accel_mps2, "peak_speed_mps": peak_speed_mps,
                         "cruise_s": cruise_s, "axis": axis,
                     },
-                    height_m=height_m,
-                    reps_required=4,
-                    description="Higher-speed accel/decel pulse, bracketing faster deployment flight.",
+                    height_m=h,
+                    reps_required=2,
+                    description=(
+                        "Higher-speed accel/decel pulse, bracketing faster deployment flight, "
+                        f"flown at height={h:.2f}m for altitude-sweep coverage."
+                    ),
                 ))
+
+    # accel_decel_with_climb: an engineering extension beyond the paper (see module docstring) --
+    # concurrent horizontal accel/decel + slow continuous altitude ramp in one rep, so both v_x
+    # and z vary together within a single continuous trajectory rather than only across separate
+    # reps. climb_start_m/climb_end_m span the same 0.3-1.2m range as ALTITUDE_SWEEP_M; "up" and
+    # "down" variants cover both climb directions so the collected dz/dt sign isn't confounded
+    # with anything else in the maneuver. TrajectorySpec.height_m is set to the *end* height
+    # (see accel_decel_with_climb_profile's docstring for why).
+    for axis in ("x", "y"):
+        for direction, climb_start_m, climb_end_m in (("up", 0.3, 0.9), ("down", 0.9, 0.3)):
+            specs.append(TrajectorySpec(
+                id=f"accel_decel_climb_{direction}_{axis}",
+                motif_type="accel_decel_with_climb",
+                params={
+                    "accel_mps2": 0.5, "peak_speed_mps": 0.375, "cruise_s": 0.5, "axis": axis,
+                    "climb_start_m": climb_start_m, "climb_end_m": climb_end_m,
+                },
+                height_m=climb_end_m,
+                reps_required=3,
+                description=(
+                    "Accel/decel pulse concurrent with a slow continuous altitude ramp "
+                    f"({climb_start_m:.1f}m -> {climb_end_m:.1f}m) -- untested-by-the-paper "
+                    "extension, see module docstring."
+                ),
+            ))
 
     for amplitude_m in (0.1, 0.2):
         for period_s in (2.0, 3.0):
@@ -483,20 +625,30 @@ def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[Traject
                 description="Coordinated yaw+forward turn, decoupling heading from velocity direction.",
             ))
 
-    for freq_range_hz in ((0.1, 0.3), (0.3, 0.6)):
+    # sum_of_sines carries horizontal acceleration too (it's a continuous random-frequency accel
+    # profile, not constant-velocity), so it also gets altitude variety -- via
+    # ALTITUDE_SWEEP_SECONDARY_M (2 points, not the primary sweep's 4) since it's a lower-value
+    # motif than accel_decel_pulse per the module docstring. freq_range_hz breadth is trimmed
+    # from 2 ranges to 1 to pay for the height multiplier within budget.
+    for freq_range_hz in ((0.2, 0.5),):
         for amp_mps in (0.2, 0.4):
             for axis in ("x", "y"):
-                specs.append(TrajectorySpec(
-                    id=f"sines_{axis}_f{freq_range_hz[0]:.2f}-{freq_range_hz[1]:.2f}_a{amp_mps:.2f}",
-                    motif_type="sum_of_sines",
-                    params={
-                        "n_components": 3, "freq_range_hz": freq_range_hz, "amp_mps": amp_mps,
-                        "duration_s": 8.0, "axis": axis, "seed": hash((freq_range_hz, amp_mps, axis)) % (2**31),
-                    },
-                    height_m=height_m,
-                    reps_required=2,
-                    description="Continuous random-frequency acceleration profile for frequency coverage.",
-                ))
+                for h in ALTITUDE_SWEEP_SECONDARY_M:
+                    specs.append(TrajectorySpec(
+                        id=f"sines_{axis}_f{freq_range_hz[0]:.2f}-{freq_range_hz[1]:.2f}_a{amp_mps:.2f}_h{h:.2f}",
+                        motif_type="sum_of_sines",
+                        params={
+                            "n_components": 3, "freq_range_hz": freq_range_hz, "amp_mps": amp_mps,
+                            "duration_s": 8.0, "axis": axis,
+                            "seed": hash((freq_range_hz, amp_mps, axis, h)) % (2**31),
+                        },
+                        height_m=h,
+                        reps_required=2,
+                        description=(
+                            "Continuous random-frequency acceleration profile for frequency "
+                            f"coverage, flown at height={h:.2f}m for altitude-sweep coverage."
+                        ),
+                    ))
 
     mixed_variants = [
         [
@@ -528,20 +680,28 @@ def build_trajectory_library(height_m: float = DEFAULT_HEIGHT_M) -> List[Traject
     # systematic parameter sweep. leg_distance_m/n_legs/zigzag_angle_deg are tuned to keep the
     # pattern's footprint safely inside the geofence soft-clamp margin at this speed -- do not
     # widen them without rechecking the footprint (integrate vel_fn's vx/vy over time; see the
-    # accel_decel_pulse fast-additions comment above for why this matters).
+    # accel_decel_pulse fast-additions comment above for why this matters). Each corner is an
+    # accel/decel event, so this also gets altitude variety via ALTITUDE_SWEEP_SECONDARY_M (same
+    # reduced 2-point sweep as sum_of_sines, to fit the battery budget); reps_required dropped
+    # from 3 to 2 per (variant, height) pair since height itself now supplies some of the
+    # diversity the extra rep used to.
     zigzag_variants = [
         {"leg_distance_m": 0.4, "leg_speed_mps": 1.0, "leg_accel_mps2": 1.5, "n_legs": 3, "zigzag_angle_deg": 35.0},
         {"leg_distance_m": 0.35, "leg_speed_mps": 0.9, "leg_accel_mps2": 1.5, "n_legs": 3, "zigzag_angle_deg": 30.0},
     ]
     for idx, params in enumerate(zigzag_variants):
-        specs.append(TrajectorySpec(
-            id=f"zigzag_{idx}",
-            motif_type="zigzag",
-            params=params,
-            height_m=height_m,
-            reps_required=3,
-            max_duration_s=20.0,
-            description="Task-representative zig-zag coverage pattern at near-deployment speed.",
-        ))
+        for h in ALTITUDE_SWEEP_SECONDARY_M:
+            specs.append(TrajectorySpec(
+                id=f"zigzag_{idx}_h{h:.2f}",
+                motif_type="zigzag",
+                params=params,
+                height_m=h,
+                reps_required=2,
+                max_duration_s=20.0,
+                description=(
+                    "Task-representative zig-zag coverage pattern at near-deployment speed, "
+                    f"flown at height={h:.2f}m for altitude-sweep coverage."
+                ),
+            ))
 
     return specs

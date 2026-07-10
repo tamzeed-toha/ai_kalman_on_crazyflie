@@ -38,6 +38,12 @@ import trajectories
 def main() -> None:
     cf_link.initialize_cflib_drivers()
 
+    # height_m here is only the *default* height for motifs that don't vary altitude (hover,
+    # vertical_bob, offset_turn, mixed_free -- see trajectories.py's module docstring for why).
+    # Motifs that carry horizontal acceleration (accel_decel_pulse, accel_decel_with_climb,
+    # sum_of_sines, zigzag) set their own per-spec height_m internally, sweeping across
+    # ALTITUDE_SWEEP_M / ALTITUDE_SWEEP_SECONDARY_M, to fix the altitude estimator's "predict the
+    # training mean z" failure mode from the first (single fixed-height) collection campaign.
     library = trajectories.build_trajectory_library(height_m=config.DEFAULT_HEIGHT_M)
     specs_by_id = {spec.id: spec for spec in library}
     state = state_store.load_or_init_state(config.STATE_FILE, library)

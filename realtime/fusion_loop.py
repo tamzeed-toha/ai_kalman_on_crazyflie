@@ -14,9 +14,11 @@ import warnings
 import numpy as np
 
 from realtime.ann_estimator import compute_r_aug_z
-from realtime.buffers import RollingWindow, ThetaTracker
-from realtime.config import DT, FLOW_GAIN_PLACEHOLDER, G_MPS2, R_AUG_Z_COLD_START
-from realtime.sensor_conversion import body_accel_to_planar_frame, raw_flow_to_optic_flow
+from realtime.buffers import AttitudeTracker, RollingWindow
+from realtime.config import (
+    DT, FLOW_GAIN, FLOW_SANITY_CLAMP, G_MPS2, R_AUG_Z_ACCEL_FLOOR, R_AUG_Z_COLD_START,
+)
+from realtime.sensor_conversion import raw_flow_to_body_frame_optic_flow, tilt_compensate_horizontal_accel
 
 
 class FusionLoop:
@@ -29,8 +31,8 @@ class FusionLoop:
         self.control_input_provider = control_input_provider
         self._warned_no_control_provider = False
 
-        self.window = RollingWindow()
-        self.theta_tracker = ThetaTracker()
+        self.window = RollingWindow(channels=ann_estimator.channels, window_size=ann_estimator.window_size)
+        self.attitude_tracker = AttitudeTracker()
 
         self._queue = queue.Queue(maxsize=1)
         self._stop_event = threading.Event()
@@ -39,21 +41,24 @@ class FusionLoop:
     # --- log callbacks (run on cflib's thread; keep these cheap) ------------------------------
 
     def on_imu_flow(self, timestamp, data):
-        theta = self.theta_tracker.get_theta()
-        theta_dot = np.deg2rad(data["gyro.y"])
-        self.theta_tracker.integrate(theta_dot, DT)
+        roll, pitch = self.attitude_tracker.get_attitude()
+        roll_rate = np.deg2rad(data["gyro.x"])
+        pitch_rate = np.deg2rad(data["gyro.y"])
+        self.attitude_tracker.integrate(roll_rate, pitch_rate, DT)
 
         acc_x_body = data["acc.x"] * G_MPS2
+        acc_y_body = data["acc.y"] * G_MPS2
         acc_z_body = data["acc.z"] * G_MPS2
-        accel_x, accel_z = body_accel_to_planar_frame(acc_x_body, acc_z_body, theta)
+        v_x_dot, v_y_dot = tilt_compensate_horizontal_accel(acc_x_body, acc_y_body, acc_z_body, roll, pitch)
 
-        optic_flow = raw_flow_to_optic_flow(data["motion.deltaX"], DT, FLOW_GAIN_PLACEHOLDER)
+        r_x, r_y = raw_flow_to_body_frame_optic_flow(
+            data["motion.deltaX"], data["motion.deltaY"], DT,
+            roll_rate, pitch_rate, roll, pitch,
+            flow_gain=FLOW_GAIN, clamp=FLOW_SANITY_CLAMP,
+        )
 
-        self.window.push({"optic_flow": optic_flow, "accel_x": accel_x, "accel_z": accel_z})
-        self._latest_theta = theta
-        self._latest_theta_dot = theta_dot
-        self._latest_optic_flow = optic_flow
-        self._latest_accel = (accel_x, accel_z)
+        self.window.push({"meas_r_x": r_x, "meas_r_y": r_y, "meas_v_x_dot": v_x_dot, "meas_v_y_dot": v_y_dot})
+        self._latest_measurements = (r_x, r_y, v_x_dot, v_y_dot)
 
         try:
             self._queue.put_nowait(True)
@@ -61,7 +66,9 @@ class FusionLoop:
             pass  # a tick is already pending; the worker will use the newest window anyway
 
     def on_state_att(self, timestamp, data):
-        self.theta_tracker.reset_from_attitude(np.deg2rad(data["stateEstimate.pitch"]))
+        self.attitude_tracker.reset_from_attitude(
+            np.deg2rad(data["stateEstimate.roll"]), np.deg2rad(data["stateEstimate.pitch"]),
+        )
 
     # --- worker thread ------------------------------------------------------------------------
 
@@ -79,12 +86,12 @@ class FusionLoop:
         if self.control_input_provider is None:
             if not self._warned_no_control_provider:
                 warnings.warn(
-                    "No control_input_provider supplied -- using u=[0, 0]. The filter's "
-                    "process model will not feel commanded thrust/pitch torque. Fine for "
+                    "No control_input_provider supplied -- using u=[0, 0, 0, 0]. The filter's "
+                    "process model will not feel commanded accel/yaw-rate. Fine for "
                     "wiring/replay testing; do not fly with this.", stacklevel=2,
                 )
                 self._warned_no_control_provider = True
-            return np.zeros(2)
+            return np.zeros(4)
         return self.control_input_provider()
 
     def _run(self):
@@ -101,20 +108,15 @@ class FusionLoop:
 
             if self.window.is_full:
                 z_pred = self.ann.predict(self.window.get_vector())
-                r_aug_z = compute_r_aug_z(self.window.accel_x_window())
+                r_aug_z = compute_r_aug_z(self.window.horizontal_accel_magnitude_window(), R_AUG_Z_ACCEL_FLOOR)
             else:
-                # Window not warmed up yet (first WINDOW_SIZE ticks after startup): still run
-                # the base 5-measurement update, but with the ANN slot effectively disabled
+                # Window not warmed up yet (first window_size ticks after startup): still run
+                # the base 4-measurement update, but with the ANN slot effectively disabled
                 # (huge R, and z_pred pinned to the current estimate so its residual is ~0),
                 # matching the reference notebook's zero-padded/huge-R warmup convention.
                 z_pred = self.filter.z_estimate
                 r_aug_z = R_AUG_Z_COLD_START
 
-            base_measurements = [
-                self._latest_optic_flow, self._latest_theta, self._latest_theta_dot,
-                self._latest_accel[0], self._latest_accel[1],
-            ]
             u = self._get_control_input()
-
-            self.filter.tick(base_measurements, z_pred, r_aug_z, u)
+            self.filter.tick(self._latest_measurements, z_pred, r_aug_z, u)
             self.link.push_measurement(self.filter.z_estimate, self.filter.z_variance)

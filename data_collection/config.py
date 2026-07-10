@@ -87,6 +87,9 @@ UP_STOP_M = 0.20
 # ---------------------------------------------------------------------------
 GEOFENCE_X_M = (-1.5, 1.5)
 GEOFENCE_Y_M = (-1.5, 1.5)
+# trajectories.py's ALTITUDE_SWEEP_M flies accel-carrying motifs across ~0.3-1.2m; at the
+# extremes that's a geofence breach severity of ~0.74/~0.83 (1.0 = exactly at a bound, see
+# safety.py:_axis_breach_severity) -- comfortably inside this bound with margin, no change needed.
 GEOFENCE_Z_M = (0.15, 1.3)
 
 # Soft-clamp begins this far inside each bound; hard abort-and-return triggers this

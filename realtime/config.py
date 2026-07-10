@@ -10,8 +10,8 @@ DEFAULT_URI = "radio://0/80/2M"
 FUSION_RATE_HZ = 100
 DT = 1.0 / FUSION_RATE_HZ
 
-# state_att (theta/theta_dot ground truth refresh) is only 50Hz -- theta is dead-reckoned
-# with gyro (theta_dot) between refreshes. See buffers.ThetaTracker.
+# state_att (roll/pitch ground truth refresh) is only 50Hz -- roll/pitch are dead-reckoned with
+# gyro between refreshes. See buffers.AttitudeTracker.
 ATTITUDE_RATE_HZ = 50
 
 # Diagnostic-only blocks (not fusion inputs) -- see rates.tsv purposes column.
@@ -21,28 +21,52 @@ RANGER_RATE_HZ = 20
 BARO_RATE_HZ = 10
 
 # --- ANN window ---
-# Must exactly match whatever collect_offset_rows(...) call was used to build the training set.
-ANN_CHANNELS = ["optic_flow", "accel_x", "accel_z"]
-WINDOW_SIZE = 10
-ANN_OFFSETS = list(range(0, -WINDOW_SIZE, -1))  # [0, -1, -2, ..., -9], causal only
+# NOT hardcoded here anymore -- ANN_CHANNELS/window_size are derived from whatever model was
+# actually loaded (AltitudeANNEstimator reads config['input_columns']/config['window_steps']
+# from the trained model's own .config.json), so "pull the most recent trained model" stays true
+# even if a retrain changes the window length or feature set. See ann_estimator.py.
 
 # R applied to the ANN's pseudo-measurement while the window isn't full yet (i.e. "ignore it").
 R_AUG_Z_COLD_START = 1e8
-# Floor to avoid dividing by ~0 when accel_x is near zero within a window (low observability).
+# Floor to avoid dividing by ~0 when horizontal accel is near zero within a window (low observability).
 R_AUG_Z_ACCEL_FLOOR = 1e-3
 
-# --- EKF measurement set (planar_drone.H('h_camera_imu')) ---
-# ['optic_flow', 'theta', 'theta_dot', 'accel_x', 'accel_z']
-R_BASE_DIAG = [1e-2, 1e-3, 1e-3, 1e-1, 1e-1]  # placeholder -- tune against real sensor noise
+# --- EKF measurement set (realtime/drone_model_np.h_camera_imu) ---
+# ['meas_r_x', 'meas_r_y', 'meas_v_x_dot', 'meas_v_y_dot'] -- matches train.py's INPUT_COLUMNS.
+R_BASE_DIAG = [1e-2, 1e-2, 1e-1, 1e-1]  # placeholder -- tune against real sensor noise
 
-# --- EKF process noise (planar_drone.F, state = [theta, theta_dot, x, x_dot, z, z_dot, k]) ---
-Q_DIAG = [1e-4, 1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-6]  # placeholder -- tune in Phase 5 offline replay
+# --- EKF process noise (realtime/drone_model_np.f, state = [x, y, z, v_x, v_y, v_z, psi]) ---
+Q_DIAG = [1e-3, 1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-4]  # placeholder -- tune in Phase 5 offline replay
 
 # --- Trained model artifact ---
-DEFAULT_MODEL_NAME = "v1_real"
+# None -> AltitudeANNEstimator auto-discovers the most recently modified '*.config.json' in
+# --model-dir (see ann_estimator.find_latest_model). Set explicitly to pin a specific model.
+DEFAULT_MODEL_NAME = None
 
-# --- Raw-sensor-to-model-frame calibration placeholders (see sensor_conversion.py) ---
-# TODO(Phase 1): replace with the real Flow deck v2 optical gain constant.
-FLOW_GAIN_PLACEHOLDER = 1.0
+# --- Raw-sensor-to-model-frame calibration (see sensor_conversion.py) ---
+# Derived from crazyflie-firmware's src/modules/src/kalman_core/mm_flow.c -- the firmware's own
+# flow measurement model -- not a guess. The OLD FLOW_GAIN_PLACEHOLDER=1.0 was ~500x too large
+# AND (separately, more importantly) built on the wrong axis mapping: the firmware explicitly
+# swaps and negates axes before use (src/deck/drivers/src/flowdeck_v1v2.c:
+# dpixelx=-currentMotion.deltaY, dpixely=-currentMotion.deltaX) -- raw logged motion.deltaX/
+# motion.deltaY are sensor-native axes, NOT aircraft forward/lateral. sensor_conversion.py
+# applies this swap; get it wrong and every flow-derived measurement is on the wrong axis
+# regardless of gain. Empirically confirmed against real flight data (see
+# data_collection/export_to_training_format.py's validation): correlating the corrected r_x
+# against stateEstimate.vx/zrange_m gives R^2~0.63 (vs R^2~0.002 for the old placeholder/mapping).
+# Slope was ~0.6-0.7, not exactly 1.0 -- likely regression dilution from sensor noise and
+# stateEstimate.vx not being independent ground truth, not necessarily a residual gain error.
+FLOW_NPIX = 35.0
+FLOW_THETAPIX = 0.71674  # 2*sin(21 deg); firmware's comment: "42-degree angle of aperture"
+FLOW_RESOLUTION = 0.1    # raw PMW3901 registers report 10x actual motion pixels (firmware comment)
+FLOW_GAIN = FLOW_RESOLUTION * FLOW_THETAPIX / FLOW_NPIX  # ~0.002048
+
+# Reject/clip flow-derived measurements outside this range before they reach the EKF -- r_x/r_y
+# should physically be O(0.01-3) for this vehicle's speed/height envelope; anything wildly beyond
+# that is almost certainly a bad conversion (wrong gain/axis/units), not real motion, and feeding
+# it to the filter causes runaway divergence (confirmed: a single-pixel bad-mapping sample drove
+# z from 0.4m to >100m in seconds). This is a safety net, not a substitute for correct calibration.
+FLOW_SANITY_CLAMP = 5.0
+
 # Bitcraze IMU log values are conventionally in units of g; multiply by this to get m/s^2.
 G_MPS2 = 9.81

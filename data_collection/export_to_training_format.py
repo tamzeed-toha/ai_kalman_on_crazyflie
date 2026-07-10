@@ -5,17 +5,29 @@ manifest.csv -- so train.py can point at real data via its own existing
 `--simulated-trajectories-dir` flag, with zero changes needed to train.py itself.
 
 Targets the model train.py ACTUALLY consumes today: model/drone_simulator.py's body_level-frame
-measurement equations (r_x = v_x/z, r_y = v_y/z; see its h()). NOT references/planar_drone.py --
-realtime/sensor_conversion.py's conversions target THAT different (2D, pitch-only) model, which
-is a separate, real inconsistency in this repo worth reconciling before the realtime pipeline and
-this training pipeline are consistent. See crazyflie_data_adaptation_brief.md Sec. 1-3.
+measurement equations (r_x = v_x/z, r_y = v_y/z; see its h()). realtime/sensor_conversion.py
+targets the same model now too (previously targeted a different, 2D model -- since reconciled;
+see realtime/README.md). See crazyflie_data_adaptation_brief.md Sec. 1-3 for the still-open
+accel-semantics question (point 2 below).
 
-PROVISIONAL -- read before trusting output for anything beyond a real-data pipeline smoke test:
-
-1. FLOW_GAIN_PLACEHOLDER (pixel -> rad conversion for the Flow deck v2 PMW3901) is the same
-   unresolved placeholder flagged in realtime/sensor_conversion.py's raw_flow_to_optic_flow --
-   not a calibrated value. Recalibrate once Phase 1 produces a real constant, then re-run this
-   script (cheap) to regenerate real_trajectories/.
+1. FLOW CONVERSION -- fixed, empirically validated against real data, not a placeholder anymore.
+   Two things had to be right, not just gain:
+     a. AXIS SWAP + SIGN: crazyflie-firmware's flowdeck_v1v2.c computes
+        `accpx = -currentMotion.deltaY` (forward), `accpy = -currentMotion.deltaX` (lateral)
+        before using flow at all -- "flip motion information to comply with sensor mounting"
+        per its own comment. The raw LOGGED flow_delta_x_px/flow_delta_y_px are PRE-swap
+        sensor-native axes, not aircraft forward/lateral. Using them directly (as this script
+        used to) gives R^2~0.002 (pure noise) when regressed against stateEstimate.vx/zrange_m;
+        applying the swap gives R^2~0.63.
+     b. GAIN: FLOW_GAIN = FLOW_RESOLUTION * FLOW_THETAPIX / FLOW_NPIX, derived from
+        crazyflie-firmware's src/modules/src/kalman_core/mm_flow.c constants, not guessed.
+   Rotation-rate compensation (gyro_y for forward flow, gyro_x for lateral, matching
+   mm_flow.c's omegay_b/omegax_b) and the R[2][2]=cos(roll)*cos(pitch) tilt projection are
+   included for fidelity to the firmware model, though empirically they didn't clearly improve
+   R^2 over the translation-only version on this dataset (plausibly attitude/gyro noise, not
+   evidence the compensation is wrong -- worth re-checking with more/cleaner data). If
+   FLOW_NPIX/FLOW_THETAPIX/FLOW_RESOLUTION/FLOW_GAIN change in realtime/config.py, mirror the
+   change here -- these two files must stay in sync (see this module's earlier note).
 2. meas_v_x_dot/meas_v_y_dot are computed by tilt-compensating raw body-frame acc.x/acc.y using
    logged roll/pitch (removing gravity's projection onto the tilted body axes) to estimate
    level-frame horizontal acceleration -- this correctly removes tilt, but whether the model's
@@ -44,14 +56,24 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 import config
 
 REAL_TRAJECTORIES_DIR = config.BASE_DIR.parent / "real_trajectories"
 
-# Placeholder -- see module docstring point 1. Units: radians of optical angle per pixel.
-FLOW_GAIN_PLACEHOLDER = 0.0075
+# Derived from crazyflie-firmware's src/modules/src/kalman_core/mm_flow.c -- see module
+# docstring point 1. MUST match realtime/config.py's FLOW_NPIX/FLOW_THETAPIX/FLOW_RESOLUTION/
+# FLOW_GAIN exactly (training-time and inference-time preprocessing have to agree).
+FLOW_NPIX = 35.0
+FLOW_THETAPIX = 0.71674
+FLOW_RESOLUTION = 0.1
+FLOW_GAIN = FLOW_RESOLUTION * FLOW_THETAPIX / FLOW_NPIX  # ~0.002048
+
+# Reject physically-impossible flow-derived values rather than feeding them into training data --
+# see realtime/config.py's FLOW_SANITY_CLAMP for the matching real-time-side safety net.
+FLOW_SANITY_CLAMP = 5.0
 
 MIN_FLOW_SQUAL = 10  # skip rows with very low flow-tracking confidence
 
@@ -67,6 +89,22 @@ def _tilt_compensate(ax, ay, az, roll_rad, pitch_rad):
     ax_level = ax * cp + az1 * sp
     ay_level = ay1
     return ax_level, ay_level
+
+
+def _flow_to_body_frame(delta_x_raw, delta_y_raw, dt, gyro_x_rad_s, gyro_y_rad_s, roll_rad, pitch_rad):
+    """Raw motion.deltaX/deltaY (sensor-native axes) -> [meas_r_x, meas_r_y] = [v_x/z, v_y/z]
+    (aircraft forward/lateral), matching crazyflie-firmware's mm_flow.c. See module docstring
+    point 1 -- MUST match realtime/sensor_conversion.py's raw_flow_to_body_frame_optic_flow."""
+    dpixel_forward = -delta_y_raw
+    dpixel_lateral = -delta_x_raw
+    r22 = np.cos(roll_rad) * np.cos(pitch_rad)
+
+    r_x = (dpixel_forward * FLOW_GAIN / dt + gyro_y_rad_s) / r22
+    r_y = (dpixel_lateral * FLOW_GAIN / dt + gyro_x_rad_s) / r22
+
+    r_x = np.clip(r_x, -FLOW_SANITY_CLAMP, FLOW_SANITY_CLAMP)
+    r_y = np.clip(r_y, -FLOW_SANITY_CLAMP, FLOW_SANITY_CLAMP)
+    return r_x, r_y
 
 
 def _completed_rep_sessions(state: dict) -> dict:
@@ -104,6 +142,8 @@ def _build_rep_dataframe(seg: pd.DataFrame) -> pd.DataFrame:
 
     roll_rad = seg["roll_deg"].to_numpy() * (math.pi / 180.0)
     pitch_rad = seg["pitch_deg"].to_numpy() * (math.pi / 180.0)
+    gyro_x_rad_s = seg["gyro_x_dps"].to_numpy() * (math.pi / 180.0)
+    gyro_y_rad_s = seg["gyro_y_dps"].to_numpy() * (math.pi / 180.0)
     acc_x = seg["acc_x_g"].to_numpy() * 9.81
     acc_y = seg["acc_y_g"].to_numpy() * 9.81
     acc_z = seg["acc_z_g"].to_numpy() * 9.81
@@ -115,8 +155,10 @@ def _build_rep_dataframe(seg: pd.DataFrame) -> pd.DataFrame:
         meas_v_x_dot.append(vx_dot)
         meas_v_y_dot.append(vy_dot)
 
-    meas_r_x = seg["flow_delta_x_px"].to_numpy() * FLOW_GAIN_PLACEHOLDER / dt
-    meas_r_y = seg["flow_delta_y_px"].to_numpy() * FLOW_GAIN_PLACEHOLDER / dt
+    meas_r_x, meas_r_y = _flow_to_body_frame(
+        seg["flow_delta_x_px"].to_numpy(), seg["flow_delta_y_px"].to_numpy(), dt,
+        gyro_x_rad_s, gyro_y_rad_s, roll_rad, pitch_rad,
+    )
 
     out = pd.DataFrame({
         "time": pc_time - pc_time[0],
