@@ -7,12 +7,14 @@ no direct height sensor) to an altitude estimate. It does NOT implement the AI-K
 fusion step (that's elaborate_plan.md Phase 5); references/A_planar_drone_AI_UKF.ipynb has a
 working template for that step (on a different, external model) to adapt later.
 
-Data: reads every trajectory listed in simulated_trajectories/manifest.csv (produced by
-utils/trajectory_generator.py). For each trajectory it builds windowed (X, y) training samples
-using the "impaired" sensor columns -- optical flow (meas_r_x, meas_r_y) and accelerometer
-(meas_v_x_dot, meas_v_y_dot) -- as input, and altitude (state_z) as the regression target. This
-mirrors the paper's altitude estimator, extended to 2D (the paper's own case only used forward
-flow + forward acceleration; our model also has a lateral/y axis).
+Data: reads every trajectory listed in <directory>/manifest.csv, where <directory> is either
+converted_real_trajectories/ (real flight data, converted by utils/real_data_conversion.py --
+the default) or simulated_trajectories/ (produced by utils/trajectory_generator.py), selected via
+--directory. For each trajectory it builds windowed (X, y) training samples using the "impaired"
+sensor columns -- optical flow (meas_r_x, meas_r_y) and accelerometer (meas_v_x_dot, meas_v_y_dot)
+-- as input, and altitude (state_z) as the regression target. This mirrors the paper's altitude
+estimator, extended to 2D (the paper's own case only used forward flow + forward acceleration;
+our model also has a lateral/y axis).
 
 The train/test split is done BY TRAJECTORY, not by row, so overlapping sliding-window samples
 from the same flight never span the split (a naive row-level split would leak information between
@@ -25,7 +27,9 @@ the run is a pipeline smoke test, not a real trained estimator.
 
 Usage:
     python3 train.py
-        Train on everything in simulated_trajectories/ with default settings.
+        Train on everything in converted_real_trajectories/ (the default) with default settings.
+    python3 train.py --directory simulated_trajectories
+        Train on simulated_trajectories/ instead.
     python3 train.py --window-s 2.0 --epochs 200 --test-fraction 0.2
 """
 
@@ -44,7 +48,11 @@ if str(REPO_ROOT) not in sys.path:
 
 from utils.ann_utility import build_windowed_dataset, build_model, save_model_complete
 
-SIMULATED_TRAJECTORIES_DIR = REPO_ROOT / 'simulated_trajectories'
+CONVERTED_REAL_TRAJECTORIES_DIRNAME = 'converted_real_trajectories'
+SIMULATED_TRAJECTORIES_DIRNAME = 'simulated_trajectories'
+DIRECTORY_CHOICES = [CONVERTED_REAL_TRAJECTORIES_DIRNAME, SIMULATED_TRAJECTORIES_DIRNAME]
+DEFAULT_DIRECTORY = CONVERTED_REAL_TRAJECTORIES_DIRNAME
+
 MODELS_DIR = REPO_ROOT / 'models'
 
 # "Impaired sensor" set: optical flow (flow deck) + accelerometer, no direct height sensor --
@@ -61,11 +69,13 @@ DEFAULT_HIDDEN_UNITS = (64, 64, 64)
 MIN_MOTIFS_FOR_MEANINGFUL_TRAINING = 3
 
 
-def load_manifest(simulated_trajectories_dir):
-    manifest_path = simulated_trajectories_dir / 'manifest.csv'
+def load_manifest(trajectories_dir):
+    manifest_path = trajectories_dir / 'manifest.csv'
     if not manifest_path.exists():
         raise FileNotFoundError(
-            f'{manifest_path} not found -- run utils/trajectory_generator.py first.')
+            f'{manifest_path} not found -- run utils/trajectory_generator.py (for '
+            f'simulated_trajectories) or utils/real_data_conversion.py (for '
+            f'converted_real_trajectories) first.')
 
     manifest = pd.read_csv(manifest_path)
     manifest['motif'] = manifest['params_json'].apply(lambda s: json.loads(s)['motif'])
@@ -89,10 +99,10 @@ def split_trajectories(filenames, test_fraction, seed):
     return shuffled[n_test:], shuffled[:n_test]
 
 
-def build_dataset(filenames, simulated_trajectories_dir, window_steps):
+def build_dataset(filenames, trajectories_dir, window_steps):
     X_parts, y_parts = [], []
     for filename in filenames:
-        df = pd.read_csv(simulated_trajectories_dir / filename)
+        df = pd.read_csv(trajectories_dir / filename)
         missing = [c for c in INPUT_COLUMNS + [OUTPUT_COLUMN] if c not in df.columns]
         if missing:
             print(f'skipping {filename}: missing columns {missing}')
@@ -107,16 +117,16 @@ def build_dataset(filenames, simulated_trajectories_dir, window_steps):
     return np.concatenate(X_parts, axis=0), np.concatenate(y_parts, axis=0)
 
 
-def infer_dt(simulated_trajectories_dir, filename):
-    df = pd.read_csv(simulated_trajectories_dir / filename)
+def infer_dt(trajectories_dir, filename):
+    df = pd.read_csv(trajectories_dir / filename)
     return float(np.median(np.diff(df['time'].values)))
 
 
-def main(simulated_trajectories_dir=SIMULATED_TRAJECTORIES_DIR, models_dir=MODELS_DIR,
+def main(trajectories_dir=REPO_ROOT / DEFAULT_DIRECTORY, models_dir=MODELS_DIR,
          window_s=DEFAULT_WINDOW_S, epochs=DEFAULT_EPOCHS, batch_size=DEFAULT_BATCH_SIZE,
          test_fraction=DEFAULT_TEST_FRACTION, noise_std=DEFAULT_NOISE_STD,
          hidden_units=DEFAULT_HIDDEN_UNITS, seed=0):
-    manifest = load_manifest(simulated_trajectories_dir)
+    manifest = load_manifest(trajectories_dir)
     all_filenames = manifest['filename'].tolist()
     motif_counts = manifest['motif'].value_counts().to_dict()
     print(f'{len(all_filenames)} trajectories available: {motif_counts}')
@@ -128,18 +138,18 @@ def main(simulated_trajectories_dir=SIMULATED_TRAJECTORIES_DIR, models_dir=MODEL
               f'accel/decel pulses) -- with this little motif diversity the estimator cannot '
               f'yet learn that distinction. Treat this run as a pipeline smoke test.')
 
-    dt = infer_dt(simulated_trajectories_dir, all_filenames[0])
+    dt = infer_dt(trajectories_dir, all_filenames[0])
     window_steps = max(1, round(window_s / dt))
     print(f'dt={dt:.4f}s -> window={window_steps} steps ({window_steps * dt:.2f}s)')
 
     train_files, test_files = split_trajectories(all_filenames, test_fraction, seed)
     print(f'train trajectories: {len(train_files)}  test trajectories: {len(test_files)}')
 
-    X_train, y_train = build_dataset(train_files, simulated_trajectories_dir, window_steps)
+    X_train, y_train = build_dataset(train_files, trajectories_dir, window_steps)
     print(f'X_train: {X_train.shape}  y_train: {y_train.shape}')
 
     if test_files:
-        X_test, y_test = build_dataset(test_files, simulated_trajectories_dir, window_steps)
+        X_test, y_test = build_dataset(test_files, trajectories_dir, window_steps)
         print(f'X_test: {X_test.shape}  y_test: {y_test.shape}')
     else:
         X_test, y_test = None, None
@@ -209,7 +219,9 @@ def main(simulated_trajectories_dir=SIMULATED_TRAJECTORIES_DIR, models_dir=MODEL
 
 def _parse_args():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--simulated-trajectories-dir', type=str, default=str(SIMULATED_TRAJECTORIES_DIR))
+    parser.add_argument('--directory', type=str, choices=DIRECTORY_CHOICES, default=DEFAULT_DIRECTORY,
+                         help=f'which trajectory folder (under the repo root) to train on '
+                              f'(default: {DEFAULT_DIRECTORY})')
     parser.add_argument('--models-dir', type=str, default=str(MODELS_DIR))
     parser.add_argument('--window-s', type=float, default=DEFAULT_WINDOW_S)
     parser.add_argument('--epochs', type=int, default=DEFAULT_EPOCHS)
@@ -222,7 +234,7 @@ def _parse_args():
 
 if __name__ == '__main__':
     args = _parse_args()
-    main(simulated_trajectories_dir=Path(args.simulated_trajectories_dir),
+    main(trajectories_dir=REPO_ROOT / args.directory,
          models_dir=Path(args.models_dir), window_s=args.window_s, epochs=args.epochs,
          batch_size=args.batch_size, test_fraction=args.test_fraction, noise_std=args.noise_std,
          seed=args.seed)
