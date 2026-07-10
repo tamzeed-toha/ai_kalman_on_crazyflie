@@ -113,7 +113,7 @@
     \item \textbf{Estimate on a collected trajectory} --- run the AI-KF estimator on
       real, already-logged flight data and validate it against the withheld ToF
       reading.
-    \item \textbf{Real-time altitude estimation} --- run the same estimator live on the Crazyflie
+    \item \textbf{Real-time altitude estimation} --- run the same estimator live on the Crazyflie \hfill \textcolor{tealc}{\scriptsize\textsc{[stretch goal]}}
     \item \textbf{Feed the control strategy} --- use the live estimate to actually
       inform how the drone is controlled, not just observe it.
       \hfill \textcolor{tealc}{\scriptsize\textsc{[stretch goal]}}
@@ -145,7 +145,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Trained directly on the real flights}{ANN training}
+\begin{frame}{Trained directly on the real flights}
   \begin{columns}[T,onlytextwidth]
     \column{0.5\textwidth}
       \centering
@@ -168,6 +168,12 @@
     in-flight height jitter, not large deliberate height changes. More height
     variation in training data is next.
   \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{State estimate on a collected trajectory}
+  \centering
+  \includegraphics[height=4.2cm]{/home/jaden/repos/ai_kalman_on_crazyflie/trajectory_analysis/real_accel_decel_a0.30_c0.50_y_rep0_20260709_184855_analysis.png}\\[0.2em]
 \end{frame}
 
 % ---------------------------------------------------------------------------
