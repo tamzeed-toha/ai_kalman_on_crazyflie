@@ -4,13 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is transitioning from planning into **Phase 1 (model & simulation
-replication)** — see elaborate_plan.md §4. There is no build system, test suite, or dependency
-manifest (no `requirements.txt`/`pyproject.toml`/venv committed) yet, but early modeling code has
-started under `model/`. Read [plan.md](plan.md) and [elaborate_plan.md](elaborate_plan.md) to
-understand the full roadmap before proposing further implementation, and check the reference
-notebooks below first — they are close-to-literal worked examples of what Phase 1 (and later
-Phase 5) needs to reproduce.
+Phases 1–3 of elaborate_plan.md's roadmap have working code (simulation model, simulated-data
+generation + ANN training, real flight data collection); Phase 4 (sim-to-real transfer) and
+Phase 5 (AI-KF fusion) are partially scaffolded but have a known, unresolved model inconsistency
+(see "Known cross-file inconsistency" below) that must be fixed before their output can be
+trusted. There is still no dependency manifest at the repo root (no `requirements.txt`/
+`pyproject.toml`) — only `realtime/requirements.txt`. Convention is a shared virtualenv activated
+via `source ~/.venv/bin/activate` (referenced throughout `data_collection/` and
+`utils/trajectory_generator.py`), not committed to the repo. There is no test suite or CI.
+
+Read [plan.md](plan.md) and [elaborate_plan.md](elaborate_plan.md) for the full phased roadmap
+(risk register in §5, open decisions in §6) before proposing new work, and
+[crazyflie_data_adaptation_brief.md](crazyflie_data_adaptation_brief.md) before touching the
+model/filter or wiring real log data into it — it's a standing checklist of concrete model/data
+mismatches (accelerometer semantics, 2D-vs-3D model choice, flow pixel conversion, sim-vs-real
+sensor units) that Phase 4/5 work must resolve, several of which are *not yet resolved* in the
+code as it stands today.
 
 ## Project goal
 
@@ -28,15 +37,91 @@ bursts) — not from hovering or constant-velocity/vertical motion. This drives 
 data-collection and flight-test design (see elaborate_plan.md §2–3 for the full
 paper-to-hardware mapping and phased roadmap).
 
-Planned architecture (not yet implemented): a Raspberry Pi 5 acts as a ground/edge station, not
-an onboard companion computer — the Crazyflie streams IMU + optical flow over Crazyradio PA to
-the RPi 5 (`cflib`), which runs the AI-KF pipeline and pushes the fused altitude estimate back as
-an external measurement via the same CRTP path the firmware uses for mocap/Lighthouse/Loco
-position sources. The onboard ToF sensor stays logged throughout as ground truth but is excluded
-from the estimator's inputs. See elaborate_plan.md §3–4 for the full phased roadmap (Phase 0
-environment setup through Phase 8 live flight demo) and the risk register (§5) and open
-decisions (§6) before starting new work — check which phase is current before assuming later
-work is unblocked.
+Architecture (per elaborate_plan.md §3): a Raspberry Pi 5 acts as a ground/edge station, not an
+onboard companion computer — the Crazyflie streams IMU + optical flow over Crazyradio PA to the
+RPi 5 (`cflib`), which runs the AI-KF pipeline and pushes the fused altitude estimate back as an
+external measurement via the same CRTP path the firmware uses for mocap/Lighthouse/Loco position
+sources. The onboard ToF sensor stays logged throughout as ground truth but is excluded from the
+estimator's inputs. Check elaborate_plan.md's phase list before assuming later work is unblocked.
+
+## End-to-end data/model pipeline
+
+Two parallel data sources feed the same training script, and both ultimately need to agree with
+whatever model `realtime/` runs online — they currently don't (see below).
+
+**Simulated path (Phase 2):**
+`model/drone_simulator.py` (`DroneModel`/`DroneSimulator(pybounds.Simulator)`, casadi/do_mpc MPC)
+→ `utils/trajectory_generator.py` flies each of ~7 motifs (sinusoidal, straight, accel_decel,
+turn, circle, casting, random sum-of-sines) through the simulator → writes one gzipped CSV per
+trajectory plus `simulated_trajectories/manifest.csv` → `train.py` builds sliding-window
+(optic-flow + accel → altitude) samples via `utils/ann_utility.py` and trains/saves a Keras MLP
+into `models/` (`<name>.config.json` + `<name>.weights.h5`; only the JSON is committed — weights
+are gitignored, regenerate by rerunning training).
+
+**Real path (Phase 3):** `data_collection/collect_data.py` flies a queued trajectory library
+(`data_collection/trajectories.py`) on real hardware, logging IMU/flow/ToF/EKF-state/motor/power
+at up to 100 Hz per `data_collection/config.py`'s `LOG_BLOCKS`, resumable via
+`data_collection/state_store.py` + `data/progress_state.json` (see
+[data_collection/README.md](data_collection/README.md) for the full flight checklist — read it
+before running anything in that directory, it has hardware/safety prerequisites).
+`data_collection/export_to_training_format.py` then converts completed reps into the *same*
+per-trajectory-CSV-plus-manifest format `train.py` expects, so `train.py
+--simulated-trajectories-dir real_trajectories --models-dir ../models_real` fine-tunes on real
+data with zero changes to `train.py` itself.
+
+**Realtime path (Phase 5 skeleton, not flight-tested):** `realtime/main.py` loads a trained
+model artifact and runs `realtime/fusion_loop.py`, which wires `realtime/crazyflie_link.py`
+(cflib log/command streaming) → `realtime/sensor_conversion.py` (raw log units → model inputs) →
+`realtime/ann_estimator.py` (loads the Keras model) → `realtime/filter_wrapper.py` (EKF fusion)
+→ pushes the fused estimate back via `crazyflie_link.push_measurement`. See
+[realtime/README.md](realtime/README.md) for prerequisites, the full tick-by-tick data flow, and
+placeholders that need calibration before trusting it near a real flight (flow pixel→physical
+gain, accel rotation, firmware log payload size, `R`/`Q` magnitudes).
+
+### Known cross-file inconsistency (read before extending either pipeline)
+
+`train.py`/`export_to_training_format.py` target `model/drone_simulator.py`'s measurement
+equations (`r_x = v_x/z`, body-level frame). `realtime/sensor_conversion.py`'s conversions
+instead target `references/planar_drone.py`'s different (2D, pitch-only) model/measurement
+convention. These are two different models with different measurement functions — the training
+pipeline and the realtime pipeline are not currently consistent with each other. This is flagged
+in detail, with a suggested resolution order, in
+[crazyflie_data_adaptation_brief.md](crazyflie_data_adaptation_brief.md) §1–3 — resolve which
+model is authoritative there before adding to either pipeline. Separately, `model/drone_simulator.py`
+itself may correspond to the paper's *wind-estimation* case study rather than the *altitude* one
+the notebooks below use — this is still an open decision, not a resolved fact; don't assume it's
+the correct Phase 1 target without confirming. (The repo previously also had a `model/drone_model.py`
+wind-focused model; it has since been removed — `drone_simulator.py` is now the only model file.)
+
+## Commands
+
+No build/lint/test tooling exists yet. The runnable entry points, in pipeline order:
+
+```bash
+# Phase 2: generate simulated training trajectories (defaults to 1000; already-generated files
+# are skipped, so an interrupted batch resumes safely)
+python3 utils/trajectory_generator.py --n-trajectories 10 --length 2.0   # small/fast smoke test
+python3 utils/trajectory_generator.py                                    # full default set
+
+# Inspect one simulated trajectory
+python3 utils/trajectory_visualizer.py simulated_trajectories/accel_decel_0000.csv.gz
+
+# Phase 2: train the ANN altitude estimator on everything in simulated_trajectories/
+python3 train.py
+python3 train.py --window-s 2.0 --epochs 200 --test-fraction 0.2
+
+# Phase 3: real flight data collection (run from data_collection/; see its README for the
+# hardware checklist and required order of operations — bench test, then smoke test, before
+# the full unattended queue)
+cd data_collection
+python bench_test_logging.py     # verify log throughput at current config.LOG_BLOCKS rates
+python simple_flight_test.py     # minimal supervised smoke flight
+python collect_data.py           # full trajectory queue, resumable across battery swaps
+python export_to_training_format.py   # convert collected CSVs into train.py's input format
+
+# Phase 5: run the (not yet flight-validated) realtime fusion loop
+python -m realtime.main --uri radio://0/80/2M --model-dir /path/to/models --model-name v1_real
+```
 
 ## Working with the reference library
 
@@ -58,98 +143,57 @@ work is unblocked.
 ### Worked-example notebooks (`references/A_*.ipynb`, `references/B_*.ipynb`)
 
 Two Jupyter notebooks pulled from the paper's companion codebase
-(`florisvb/Nonlinear_and_Data_Driven_Estimation` on GitHub) — these are the most concrete
-templates we have for Phase 1/Phase 5 and should be adapted rather than re-derived from scratch:
+(`florisvb/Nonlinear_and_Data_Driven_Estimation` on GitHub) — these are the templates the
+in-repo pipeline above was adapted from, and remain the reference for the still-unbuilt AI-KF
+fusion step:
 
 - **`B_empirical_nonlinear_observability_pybounds.ipynb`** — runs `pybounds` end-to-end on a
   *planar* drone model (states: `theta, theta_dot, x, x_dot, z, z_dot, k`): MPC-simulates a
   trajectory, then computes sliding-window Fisher information / minimum error variance per state
   for several candidate sensor sets (GPS-like `h_a`, camera+theta+k `h_b`, camera+IMU `h_c`). The
   `h_camera_imu` measurement set (`optic_flow, theta, theta_dot, accel_x, accel_z`) is the one
-  that matches Crazyflie's Flow deck v2 + onboard IMU — this notebook *is* essentially the Phase 1
-  deliverable already, just with placeholder (non-Crazyflie) physical parameters. This is the
-  template for reproducing elaborate_plan.md's Phase 1 motif/observability sweep.
+  that matches Crazyflie's Flow deck v2 + onboard IMU. This is the template for the Phase 1
+  motif/observability sweep — see `crazyflie_data_adaptation_brief.md` §1 for why its `accel_x/z`
+  convention (kinematic acceleration) doesn't match a real accelerometer's specific-force output
+  without an explicit conversion.
 - **`A_planar_drone_AI_UKF.ipynb`** — takes the same planar drone model and measurement set,
   runs a standard UKF (showing it diverge from a bad initial altitude guess), then builds the
   AI-UKF: trains/loads a small Keras ANN altitude estimator over a sliding window of
   `optic_flow, accel_x, accel_z`, derives a time-varying `R_aug_z ≈ 1/min(|accel_x|)` over each
   window (encoding "z is only observable under horizontal acceleration" as a filter covariance),
   augments the measurement function and R matrix, and reruns the UKF to show it now converges.
-  This is the template for Phase 5 (AI-KF integration) and the ANN part of Phase 2.
+  This is the template for Phase 5's still-unbuilt AI-KF fusion step (`realtime/filter_wrapper.py`
+  currently does plain EKF fusion, not yet the observability-weighted AI-KF augmentation).
 
 Both notebooks depend on `casadi`, `do_mpc`, `pybounds` (installed via
-`pip install git+https://github.com/vanbreugel-lab/pybounds`), and `tensorflow`/Keras (notebook A
-only) — none of which are installed or pinned anywhere in this repo yet. Both also import several
-helper modules (`planar_drone`, `plot_utility`, `generate_training_data_utility`,
-`keras_ann_utility`, `extended_kalman_filter`, `unscented_kalman_filter`) from a local `../Utility`
-directory that does not exist in this repo; their fallback path fetches each file individually
-from `raw.githubusercontent.com/florisvb/Nonlinear_and_Data_Driven_Estimation/main/Utility/` at
-runtime. Decide whether to vendor these into the repo (for offline/reproducible runs) before
-relying on the notebooks running unattended.
+`pip install git+https://github.com/vanbreugel-lab/pybounds`), and `tensorflow`/Keras — the same
+stack `model/drone_simulator.py`, `utils/trajectory_generator.py`, and `train.py` depend on.
+`utils/pybounds_compat.py` patches a `pybounds`/numpy incompatibility at runtime
+(`patch_pybounds_simulator_time_conversion()` — must be called before any `Simulator` is
+constructed); check there first if `DroneSimulator.simulate(mpc=True)` throws a
+`TypeError: only 0-dimensional arrays can be converted to Python scalars`.
 
-## In-progress modeling code (`model/`)
+## Vendored plotting utilities (`utils/`)
 
-Early Phase 1 code, not yet wired to any notebook or test:
-
-- `model/drone_model.py` — a standalone `Drone` class with a *wind-focused* kinematic model
-  (states `z, v_x, v_y, psi, w_x, w_y, w_x_dot, w_y_dot`; note `z_dot` is hardcoded to `0.0`, so
-  altitude is not yet dynamic here) and a hand-rolled RK4 discretizer. Self-contained — no
-  `pybounds`/`casadi` dependency.
-- `model/drone_simulator.py` — a fuller `DroneModel`/`DroneSimulator(pybounds.Simulator)` pair
-  (states include `x, y, z, v_x, v_y, v_z, psi, w, zeta` plus motor-calibration params `k_x, k_y,
-  k_psi`; supports `global` or `body_level` frames) using `casadi`/`do_mpc` for MPC trajectory
-  generation, mirroring the paper's full 3D wind+altitude quadcopter case study rather than the
-  simpler 2D altitude submodel in the notebooks above. Imports `from utils import figure_functions
-  as ff` (see below) for its `plot_trajectory` method only — everything else in the class doesn't
-  depend on it.
-- `crazyfly_simulation.ipynb` (repo root) — currently empty; presumably the intended home for
-  Crazyflie-specific Phase 1 simulation work.
-- `utils/figure_functions.py` — vendored plotting helpers (`plot_trajectory`, `pi_axis`,
-  `circplot`, heatmap/error-variance plotting, a `LatexStates` symbol dict) that `drone_simulator.py`
-  partly depends on (`ff.plot_trajectory`, which calls `fpl.colorline_with_heading`). Gaps:
-  - Unconditionally does `import figurefirst as fifi` — a real PyPI package (`pip install
-    figurefirst`, currently at 0.0.6) but not yet installed in any environment/manifest here, so
-    `import figure_functions` fails until it is.
-  - `plot_trajectory_error_variance` (one function, not used by `drone_simulator.py`) references
-    `Colormaps` and `colorline` without importing them (likely meant to be a `pybounds` colormap
-    helper / `pybounds.colorline`, per notebook B's usage) — `NameError` if ever called. It also
-    calls `util.get_indices(...)` and `util.log_interpolator(...)`, neither of which exist in
-    `utils/util.py` (which only has `wrapToPi`, `wrapTo2Pi`, `smart_unwrap`, `range_of_vals`) —
-    another `AttributeError` if this function is ever called, independent of the `Colormaps`/
-    `colorline` gap.
-  - Line 182 calls `scipy.ndimage.zoom` but the file only does `import scipy` — needs
-    `import scipy.ndimage` added explicitly, or it's an `AttributeError` at runtime (only reached
-    if `interpolation` is truthy).
-- `utils/fly_plot_lib.py` — vendored legacy plotting library (`colorline`, `colorline_with_heading`,
-  `histogram`, `boxplot`, `scatter`, etc.) providing the `fpl.colorline_with_heading` that
-  `figure_functions.plot_trajectory` needs. **The file's contents are accidentally duplicated
-  end-to-end** (2701 lines; the same ~1300-line module, including its header comment, appears
-  twice back-to-back, at lines 1–1339 and 1340–2701). This doesn't currently break anything —
-  Python just re-defines each function with the second copy's (identical, except
-  `colorline_with_heading` which only exists in the second copy) — but it's worth deduplicating
-  next time this file is touched, or a future partial edit could silently apply to only one copy.
-  `scatter_line`/`scatter_box` also do function-local `import flystat.resampling`, an extra
-  dependency only needed if those two functions are actually called.
-
+- `utils/figure_functions.py` — plotting helpers (`plot_trajectory`, `pi_axis`, `circplot`,
+  heatmap/error-variance plotting) that `model/drone_simulator.py`'s `plot_trajectory` method
+  depends on via `fpl.colorline_with_heading`. Requires `figurefirst` (`pip install figurefirst`),
+  not yet in any dependency manifest. `plot_trajectory_error_variance` (unused elsewhere in this
+  repo) references `Colormaps`/`colorline` without importing them and calls
+  `util.get_indices`/`util.log_interpolator`, neither of which exist in `utils/util.py` — don't
+  call it without fixing those first.
+- `utils/fly_plot_lib.py` — vendored legacy plotting library providing `fpl.colorline_with_heading`.
+  Its contents are accidentally duplicated end-to-end (~1300 lines appearing twice back-to-back);
+  harmless today since Python just redefines each function with the (identical) second copy, but
+  worth deduplicating next time this file is touched, and a future partial edit could otherwise
+  silently apply to only one copy.
 - `utils/util.py` — small, self-contained angle-wrapping helpers (`wrapToPi`, `wrapTo2Pi`,
-  `smart_unwrap`, `range_of_vals`); only depends on `numpy`/`copy`, no further gaps.
-
-With `fly_plot_lib.py` and `util.py` now both present, the only remaining blocker to `import
-utils.figure_functions` (and thus `drone_simulator.py.plot_trajectory`) succeeding is installing
-the `figurefirst` package — there's still no dependency manifest/venv anywhere in this repo, so
-that (and `pybounds`/`casadi`/`do_mpc`/`tensorflow` from the notebooks) all still need to be
-installed before anything here can actually run.
-
-These two models (`drone_model.py`'s wind-focused kinematics vs. `drone_simulator.py`'s fuller
-wind+altitude MPC model) do not obviously correspond to the same case study as the
-`planar_drone.py` model the reference notebooks use (θ-pitch, forward-accel, optic-flow altitude
-submodel — Eq. 6–10 of the paper). Confirm with the user which model is meant to be the Phase 1
-target for Crazyflie before extending either one further, rather than assuming.
+  `smart_unwrap`, `range_of_vals`); only depends on `numpy`/`copy`.
 
 ## Other local tooling
 
 - `.claude/skills/make-cheatsheet/` — generates a validated quick-reference doc for a Python
   package (e.g. `cflib`, `pybounds`) once those dependencies are actually in use; it inspects the
   installed package via `dir()`/`inspect` rather than relying on memory, and validates the result
-  with `validate_cheatsheet.py`. Not yet exercised in this repo since no dependencies are
-  installed.
+  with `validate_cheatsheet.py`.
+- `.claude/skills/digest-paper/` — see "Working with the reference library" above.
