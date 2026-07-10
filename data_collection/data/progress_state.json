@@ -2,7 +2,7 @@
   "schema_version": 1,
   "trajectory_library_version": "21b1a23413c0",
   "created_at": "2026-07-09T17:21:33",
-  "updated_at": "2026-07-09T18:55:35",
+  "updated_at": "2026-07-10T09:23:34",
   "queue_order": [
     "hover_d3s",
     "hover_d5s",
@@ -293,7 +293,7 @@
     },
     "accel_decel_a0.40_c1.00_x": {
       "reps_required": 4,
-      "reps_completed": 3,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -511,12 +511,19 @@
           "session_id": "20260709_172258",
           "reason": "geofence_hard_land",
           "completed_at": "2026-07-09T17:26:59"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:01"
         }
       ]
     },
     "accel_decel_a0.60_c0.00_x": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -531,12 +538,26 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:52:33"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:33"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:26"
         }
       ]
     },
     "accel_decel_a0.60_c0.50_x": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -544,12 +565,33 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:55:11"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:58"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:48"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:38"
         }
       ]
     },
     "accel_decel_a0.60_c1.00_x": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -571,12 +613,26 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:55:18"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:52"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:15:30"
         }
       ]
     },
     "accel_decel_a0.80_c0.00_x": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -591,12 +647,26 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:55:23"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:56"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:49"
         }
       ]
     },
     "accel_decel_a0.80_c0.50_x": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -604,12 +674,33 @@
           "session_id": "20260709_184425",
           "reason": null,
           "completed_at": "2026-07-09T18:45:18"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:15:01"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:14"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:17"
         }
       ]
     },
     "accel_decel_a0.80_c1.00_x": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -617,17 +708,67 @@
           "session_id": "20260709_184425",
           "reason": null,
           "completed_at": "2026-07-09T18:45:12"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:45"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:08"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:22"
         }
       ]
     },
     "accel_decel_a0.30_c0.00_y": {
       "reps_required": 4,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 4,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:11:25"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:27"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:41"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:13"
+        }
+      ]
     },
     "accel_decel_a0.30_c0.50_y": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -642,12 +783,26 @@
           "session_id": "20260709_184855",
           "reason": null,
           "completed_at": "2026-07-09T18:49:40"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:20"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:09"
         }
       ]
     },
     "accel_decel_a0.60_c0.00_y": {
       "reps_required": 4,
-      "reps_completed": 3,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -669,12 +824,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:34"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:38"
         }
       ]
     },
     "accel_decel_a0.60_c0.50_y": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -689,12 +851,26 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:32"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:02"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:41"
         }
       ]
     },
     "vertical_bob_amp0.10_T2.0": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -702,6 +878,13 @@
           "session_id": "20260709_184636",
           "reason": null,
           "completed_at": "2026-07-09T18:46:53"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:28"
         }
       ]
     },
@@ -727,17 +910,47 @@
     },
     "vertical_bob_amp0.20_T2.0": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:16:48"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:15"
+        }
+      ]
     },
     "vertical_bob_amp0.20_T3.0": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:09"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:30"
+        }
+      ]
     },
     "offset_turn_v0.20_yr30": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -745,17 +958,39 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:54:08"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:16:09"
         }
       ]
     },
     "offset_turn_v0.20_yr60": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:11:13"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:01"
+        }
+      ]
     },
     "offset_turn_v0.30_yr30": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -763,17 +998,39 @@
           "session_id": "20260709_184425",
           "reason": null,
           "completed_at": "2026-07-09T18:44:54"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:11:56"
         }
       ]
     },
     "offset_turn_v0.30_yr60": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:15:43"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:11"
+        }
+      ]
     },
     "sines_x_f0.10-0.30_a0.20": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -781,12 +1038,19 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:55:04"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:55"
         }
       ]
     },
     "sines_y_f0.10-0.30_a0.20": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -794,12 +1058,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:21"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:58"
         }
       ]
     },
     "sines_x_f0.10-0.30_a0.40": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -807,6 +1078,13 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:49"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:57"
         }
       ]
     },
@@ -832,7 +1110,7 @@
     },
     "sines_x_f0.30-0.60_a0.20": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -840,22 +1118,59 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:52:10"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:40"
         }
       ]
     },
     "sines_y_f0.30-0.60_a0.20": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:22"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:51"
+        }
+      ]
     },
     "sines_x_f0.30-0.60_a0.40": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:11"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:36"
+        }
+      ]
     },
     "sines_y_f0.30-0.60_a0.40": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -863,12 +1178,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:59"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:45"
         }
       ]
     },
     "mixed_free_0": {
       "reps_required": 2,
-      "reps_completed": 0,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -876,17 +1198,46 @@
           "session_id": "20260709_185042",
           "reason": "interrupted",
           "completed_at": "2026-07-09T18:54:17"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:15:23"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:44"
         }
       ]
     },
     "mixed_free_1": {
       "reps_required": 2,
-      "reps_completed": 0,
-      "rep_history": []
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:11:36"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:31"
+        }
+      ]
     },
     "mixed_free_2": {
       "reps_required": 2,
-      "reps_completed": 1,
+      "reps_completed": 2,
       "rep_history": [
         {
           "rep_index": 0,
@@ -894,12 +1245,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:00"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:23:22"
         }
       ]
     },
     "accel_decel_fast_a1.00_c0.00_x": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -907,12 +1265,33 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:03"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:53"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:15:49"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:55"
         }
       ]
     },
     "accel_decel_fast_a1.00_c0.15_x": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -920,12 +1299,33 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:14"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:11:19"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:44"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:47"
         }
       ]
     },
     "accel_decel_fast_a1.50_c0.00_x": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -940,12 +1340,26 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:05"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:12:01"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:17:19"
         }
       ]
     },
     "accel_decel_fast_a1.50_c0.15_x": {
       "reps_required": 4,
-      "reps_completed": 3,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -967,12 +1381,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:11"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:22:23"
         }
       ]
     },
     "accel_decel_fast_a0.90_c0.00_y": {
       "reps_required": 4,
-      "reps_completed": 3,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -994,12 +1415,19 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:53:40"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:14"
         }
       ]
     },
     "accel_decel_fast_a0.90_c0.15_y": {
       "reps_required": 4,
-      "reps_completed": 2,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -1014,12 +1442,26 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:54:52"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:13:20"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:20"
         }
       ]
     },
     "accel_decel_fast_a1.20_c0.00_y": {
       "reps_required": 4,
-      "reps_completed": 1,
+      "reps_completed": 4,
       "rep_history": [
         {
           "rep_index": 0,
@@ -1027,6 +1469,27 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:51:37"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:14"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_091631",
+          "reason": null,
+          "completed_at": "2026-07-10T09:18:33"
+        },
+        {
+          "rep_index": 3,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:28"
         }
       ]
     },
@@ -1066,7 +1529,7 @@
     },
     "zigzag_0": {
       "reps_required": 3,
-      "reps_completed": 1,
+      "reps_completed": 3,
       "rep_history": [
         {
           "rep_index": 0,
@@ -1074,12 +1537,26 @@
           "session_id": "20260709_185042",
           "reason": null,
           "completed_at": "2026-07-09T18:52:22"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_091051",
+          "reason": null,
+          "completed_at": "2026-07-10T09:14:08"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:23:29"
         }
       ]
     },
     "zigzag_1": {
       "reps_required": 3,
-      "reps_completed": 2,
+      "reps_completed": 3,
       "rep_history": [
         {
           "rep_index": 0,
@@ -1094,6 +1571,13 @@
           "session_id": "20260709_185431",
           "reason": null,
           "completed_at": "2026-07-09T18:55:30"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_092058",
+          "reason": null,
+          "completed_at": "2026-07-10T09:21:34"
         }
       ]
     }
@@ -1154,6 +1638,27 @@
       "ended_at": "2026-07-09T18:55:35",
       "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260709_185431.csv",
       "end_reason": "battery_low"
+    },
+    {
+      "session_id": "20260710_091051",
+      "started_at": "2026-07-10T09:10:51",
+      "ended_at": "2026-07-10T09:16:13",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_091051.csv",
+      "end_reason": "max_session_time"
+    },
+    {
+      "session_id": "20260710_091631",
+      "started_at": "2026-07-10T09:16:31",
+      "ended_at": "2026-07-10T09:19:02",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_091631.csv",
+      "end_reason": "interrupted"
+    },
+    {
+      "session_id": "20260710_092058",
+      "started_at": "2026-07-10T09:20:58",
+      "ended_at": "2026-07-10T09:23:34",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_092058.csv",
+      "end_reason": "all_trajectories_complete"
     }
   ]
 }
