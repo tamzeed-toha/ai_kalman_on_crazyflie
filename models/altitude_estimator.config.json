@@ -1,0 +1,27 @@
+{
+  "input_dim": 800,
+  "hidden_units": [
+    64,
+    64,
+    64
+  ],
+  "activation": "relu",
+  "output_activation": "linear",
+  "input_noise_std": 0.01,
+  "input_columns": [
+    "meas_r_x",
+    "meas_r_y",
+    "meas_v_x_dot",
+    "meas_v_y_dot"
+  ],
+  "output_column": "state_z",
+  "window_steps": 200,
+  "window_s": 2.0,
+  "dt": 0.009999999999999787,
+  "train_files": [
+    "sinusoidal_0001.csv.gz"
+  ],
+  "test_files": [
+    "sinusoidal_0000.csv.gz"
+  ]
+}
