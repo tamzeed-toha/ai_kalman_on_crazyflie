@@ -171,7 +171,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Live estimation demo --- coming next}{Estimation}
+\begin{frame}{Live estimation demo}
   \centering
   \vspace{0.5em}
   \begin{tikzpicture}
@@ -185,9 +185,7 @@
   \small
   \begin{minipage}{0.85\textwidth}
     \centering
-    We don't have a live result to show yet. Once the tuned estimator is wired into
-    the real-time fusion loop, this slide becomes a side-by-side of the AI-KF's fused
-    altitude against the withheld ToF ground truth.
+   
   \end{minipage}
 \end{frame}
 
@@ -201,9 +199,7 @@
     \item \textbf{Scrutinize the drone model} --- check whether our model is actually
       accurate, or can be improved, and tune the Kalman filter's \textbf{Q} and
       \textbf{R} matrices instead of leaving them as placeholders.
-    \item \textbf{Improve training} --- more height variation and more data,
-      particularly to get past the ``single nominal altitude'' limitation in
-      today's results.
+    \item \textbf{Improve training} --- more height variation and more data.
   \end{itemize}
 \end{frame}
 
