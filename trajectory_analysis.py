@@ -1,6 +1,8 @@
 """Combined per-trajectory analysis: flight path and the trained ANN altitude estimator's raw
 estimate -- merged into one PNG per trajectory under trajectory_analysis/.
 
+Processes EVERY trajectory in the given --directory (no single-trajectory mode) -- see main().
+
 *** BOUNDS observability analysis is temporarily DISABLED (commented out) as of the current
 version, to keep this fast while iterating on trajectories/estimation. Search this file for
 "OBSERVABILITY DISABLED" to find every commented block to restore, and see git history /
@@ -13,9 +15,9 @@ variance over time) if you need the full diff back. The short version of how to 
        room for the two observability panels (search "OBSERVABILITY DISABLED").
 
 Panels (see build_figure()), currently a 1x2 grid:
-    (0,0) x-y planar position: commanded (open-loop kinematic integration of the reconstructed
-          setpoint -- no MPC tracking) vs actual (MPC-tracked), if reconstructable (needs a
-          known seed + motif, i.e. simulated_trajectories only, and state_x/state_y columns).
+    (0,0) x-y planar position (actual, colored by time; reuses utils/trajectory_visualizer.py).
+          Real/converted-real trajectories don't log state_x/state_y, so this is a placeholder
+          for those.
     (0,1) The AI-KF's data-driven estimator (H_i): true z vs the trained ANN's raw estimate over
           time, shaded by a high-horizontal-acceleration proxy (since real observability is
           currently disabled) -- the same "the raw estimate is only accurate when observable"
@@ -27,12 +29,10 @@ notation), not a full running Kalman-filter fusion -- the actual AI-KF fusion st
 this repo (see CLAUDE.md's "Known cross-file inconsistency" / Phase 5 status).
 
 Usage:
-    python3 trajectory_analysis.py --trajectory 0
-        Analyze manifest index 0 in simulated_trajectories/ (the default directory).
-    python3 trajectory_analysis.py --trajectory all
-        Fast pass (flight path + ANN estimate only) across every trajectory.
-    python3 trajectory_analysis.py --trajectory 3 --directory converted_real_trajectories
-        Analyze real trajectory #3.
+    python3 trajectory_analysis.py
+        Analyze every trajectory in converted_real_trajectories/ (the default directory).
+    python3 trajectory_analysis.py --directory simulated_trajectories
+        Analyze every trajectory in simulated_trajectories/ instead.
 """
 
 import argparse
@@ -58,7 +58,7 @@ if str(REPO_ROOT) not in sys.path:
 # from pybounds import SlidingEmpiricalObservabilityMatrix, SlidingFisherObservability, colorline
 # from model.drone_simulator import DroneSimulator
 
-from utils.trajectory_generator import MOTIFS, Z_RANGE
+from utils.trajectory_visualizer import TrajectoryVisualizer
 from utils.ann_utility import build_windowed_dataset, load_model_complete
 from train import (SIMULATED_TRAJECTORIES_DIRNAME, CONVERTED_REAL_TRAJECTORIES_DIRNAME,
                    DIRECTORY_CHOICES, DEFAULT_DIRECTORY, INPUT_COLUMNS, OUTPUT_COLUMN)
@@ -164,37 +164,6 @@ def _strip_trajectory_extension(filename):
     if name.endswith('.csv'):
         return name[:-len('.csv')]
     return Path(name).stem
-
-
-# ---------------------------------------------------------------------------
-# Setpoint reconstruction (simulated_trajectories only -- replays the exact seeded RNG draws
-# trajectory_generator.py used, to recover the commanded profile BEFORE MPC tracking).
-# ---------------------------------------------------------------------------
-
-def reconstruct_setpoint(motif, seed, t):
-    if seed is None or (isinstance(seed, float) and np.isnan(seed)):
-        return None
-    if motif not in MOTIFS:
-        return None
-
-    rng = np.random.default_rng(int(seed))
-    v_x_set, v_y_set, psi_set, _params = MOTIFS[motif](t, rng)
-    z_set = rng.uniform(*Z_RANGE)
-    return {'v_x': v_x_set, 'v_y': v_y_set, 'psi': psi_set, 'z': z_set * np.ones_like(t)}
-
-
-def reconstruct_setpoint_xy(setpoint, t):
-    """Kinematically (open-loop, no MPC tracking) integrate the commanded v_x/v_y/psi into an
-    x-y position path, for comparison against the actual MPC-tracked path. Uses the same
-    body-level-frame kinematics as model/drone_simulator.py's DroneModel.f() (x_dot/y_dot don't
-    depend on moving_frame on/off, only v_x_dot/v_y_dot do, so this is valid regardless)."""
-    v_x, v_y, psi = setpoint['v_x'], setpoint['v_y'], setpoint['psi']
-    x_dot = v_x * np.cos(psi) - v_y * np.sin(psi)
-    y_dot = v_x * np.sin(psi) + v_y * np.cos(psi)
-    dt_arr = np.diff(t)
-    x = np.concatenate([[0.0], np.cumsum(x_dot[:-1] * dt_arr)])
-    y = np.concatenate([[0.0], np.cumsum(y_dot[:-1] * dt_arr)])
-    return x, y
 
 
 # ---------------------------------------------------------------------------
@@ -352,7 +321,7 @@ def _placeholder(ax, message):
     ax.set_yticks([])
 
 
-def build_figure(filepath, metadata, seed, output_path, window_s, models_dir, model_name,
+def build_figure(filepath, metadata, output_path, window_s, models_dir, model_name,
                  skip_observability=False, verbose=True):
     if verbose:
         print(f'  loading {filepath}...')
@@ -363,9 +332,6 @@ def build_figure(filepath, metadata, seed, output_path, window_s, models_dir, mo
     if verbose:
         print(f'  {len(df)} rows, dt={dt:.4f}s, motif={motif}')
 
-    setpoint = reconstruct_setpoint(motif, seed, t)
-    if verbose:
-        print(f'  commanded setpoint {"reconstructed" if setpoint is not None else "not available"}')
     accel_segments = high_accel_segments(df)
 
     # OBSERVABILITY DISABLED: compute_observability() currently always returns None (see its
@@ -385,24 +351,17 @@ def build_figure(filepath, metadata, seed, output_path, window_s, models_dir, mo
     # over-time panel (paper Figure 2c / crazyfly_simulation_3d.ipynb style) used to go here, in
     # a 3x2 grid. See module docstring for how to restore them.
 
-    # (0,0) x-y planar position: commanded (open-loop kinematic integration of the setpoint) vs
-    # actual (MPC-tracked)
+    # (0,0) x-y planar position (actual, colored by time) -- reuses utils/trajectory_visualizer.py.
+    # That helper silently no-ops (leaving a blank axes) if state_x/state_y are missing (real/
+    # converted-real data), so check for them here and show an explanatory placeholder instead.
     ax0 = ax[0]
-    if setpoint is not None and 'state_x' in df.columns and 'state_y' in df.columns:
-        x_actual = df['state_x'].values
-        y_actual = df['state_y'].values
-        x_cmd, y_cmd = reconstruct_setpoint_xy(setpoint, t)
-        ax0.plot(x_actual, y_actual, color='firebrick', label='actual', linewidth=1.5)
-        ax0.plot(x_cmd, y_cmd, color='gray', linestyle='--', label='commanded (open-loop)')
-        ax0.set_xlabel('x [m]')
-        ax0.set_ylabel('y [m]')
-        ax0.set_aspect('equal')
-        ax0.legend(fontsize=6)
-        ax0.set_title('x-y position: commanded vs actual', fontsize=9)
+    if 'state_x' in df.columns and 'state_y' in df.columns:
+        viz = TrajectoryVisualizer(filepath)
+        viz.plot_trajectory_xy(ax=ax0)
     else:
-        _placeholder(ax0, 'commanded/actual x-y position not available\n(no seed / unknown '
-                          'motif, or missing state_x/state_y columns)')
-        ax0.set_title('x-y position: commanded vs actual', fontsize=9)
+        _placeholder(ax0, 'x-y position not available\n(missing state_x/state_y columns --\n'
+                          'real/converted-real trajectories only log the sensors listed above)')
+    ax0.set_title('x-y planar position', fontsize=9)
 
     # (0,1) AI-KF data-driven estimator (H_i): true z vs ANN raw estimate
     ax1 = ax[1]
@@ -458,26 +417,16 @@ def analyze_one(directory, row, output_dir, window_s, models_dir, model_name, ov
         return output_path
 
     metadata = json.loads(row['params_json'])
-    seed = row.get('seed', None)
-    build_figure(filepath, metadata, seed, output_path, window_s, models_dir, model_name,
+    build_figure(filepath, metadata, output_path, window_s, models_dir, model_name,
                 skip_observability=skip_observability)
     return output_path
 
 
-def main(trajectory_arg, directory_name, output_dir, window_s, skip_observability,
+def main(directory_name, output_dir, window_s, skip_observability,
         models_dir, model_name, overwrite):
     directory = REPO_ROOT / directory_name
     manifest = load_manifest(directory)
-
-    if str(trajectory_arg).lower() == 'all':
-        rows = [row for _, row in manifest.iterrows()]
-    else:
-        index = int(trajectory_arg)
-        matches = manifest[manifest['index'] == index]
-        if matches.empty:
-            raise ValueError(f'no trajectory with index={index} in {directory}/manifest.csv '
-                             f'(valid range: {manifest["index"].min()}-{manifest["index"].max()})')
-        rows = [matches.iloc[0]]
+    rows = [row for _, row in manifest.iterrows()]
 
     start_time = time.time()
     for i, row in enumerate(rows):
@@ -494,12 +443,11 @@ def main(trajectory_arg, directory_name, output_dir, window_s, skip_observabilit
 
 def _parse_args():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--trajectory', type=str, default='0',
-                        help='manifest index (int) or "all" (default: 0)')
     parser.add_argument('--directory', type=str, choices=DIRECTORY_CHOICES,
-                        default=SIMULATED_TRAJECTORIES_DIRNAME,
-                        help=f'trajectory folder under the repo root (default: '
-                             f'{SIMULATED_TRAJECTORIES_DIRNAME} -- needed for observability)')
+                        default=CONVERTED_REAL_TRAJECTORIES_DIRNAME,
+                        help=f'trajectory folder under the repo root to analyze -- EVERY '
+                             f'trajectory in it is processed (default: '
+                             f'{CONVERTED_REAL_TRAJECTORIES_DIRNAME})')
     parser.add_argument('--output-dir', type=str, default=str(OUTPUT_DIR))
     parser.add_argument('--window-s', type=float, default=DEFAULT_WINDOW_S)
     parser.add_argument('--skip-observability', action='store_true',
@@ -513,7 +461,7 @@ def _parse_args():
 
 if __name__ == '__main__':
     args = _parse_args()
-    main(trajectory_arg=args.trajectory, directory_name=args.directory,
+    main(directory_name=args.directory,
         output_dir=Path(args.output_dir), window_s=args.window_s,
         skip_observability=args.skip_observability, models_dir=Path(args.models_dir),
         model_name=args.model_name, overwrite=args.overwrite)
