@@ -1,0 +1,9 @@
+Block	Variables	Bytes	Rate	Purpose
+imu	acc.x/y/z, gyro.x/y/z (6×float)	24B	100Hz	Core IMU — the ANN's primary input
+flow	range.zrange (u16), motion.deltaX/deltaY (i16×2), motion.squal (u8)	7B	100Hz	Raw optical flow (ANN input) + z-ranger (ground-truth label)
+state_pv	stateEstimate.x/y/z/vx/vy/vz (6×float)	24B	50Hz	EKF baseline; also feeds geofence
+state_att	stateEstimate.roll/pitch/yaw (3×float)	12B	50Hz	Attitude context
+kalman_z	kalman.stateZ/statePZ/varZ/varPZ (4×float)	16B	20Hz	EKF's internal z-channel diagnostics (confirm state/var naming against firmware kalman_core.h before analysis)
+power	pm.vbat(float), pm.batteryLevel(u8), pm.state(i8), motor.m1..m4(u16×4)	14B	20Hz	Battery abort logic
+ranger	range.front/back/left/right/up (5×u16)	10B	20Hz	Multiranger obstacle-stop
+baro	baro.asl/pressure/temp (3×float)	12B	10Hz	Optional cross-check; first to drop if bandwidth is tight
