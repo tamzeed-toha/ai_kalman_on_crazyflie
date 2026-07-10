@@ -9,9 +9,24 @@ generation + ANN training, real flight data collection); Phase 4 (sim-to-real tr
 Phase 5 (AI-KF fusion) are partially scaffolded but have a known, unresolved model inconsistency
 (see "Known cross-file inconsistency" below) that must be fixed before their output can be
 trusted. There is still no dependency manifest at the repo root (no `requirements.txt`/
-`pyproject.toml`) — only `realtime/requirements.txt`. Convention is a shared virtualenv activated
-via `source ~/.venv/bin/activate` (referenced throughout `data_collection/` and
-`utils/trajectory_generator.py`), not committed to the repo. There is no test suite or CI.
+`pyproject.toml`) — only `realtime/requirements.txt`. There are two separate virtualenv
+conventions in this repo, not one: the dev/analysis side (`model/`, `utils/`, `train.py`,
+notebooks) uses a project-local `.venv/` at the repo root; `data_collection/`'s real-hardware
+scripts instead reference `source ~/.venv/bin/activate` (a home-directory venv, presumably on
+whatever machine is actually connected to the Crazyradio — likely the RPi5 ground station per
+elaborate_plan.md §3). Neither is committed to the repo. There is no test suite or CI.
+
+**Known real-data limitation (as of the last training run):** ~87% of the 146 trajectories in
+`converted_real_trajectories/` were flown within 1cm of the same z≈0.40m altitude — traced to
+`data_collection/collect_data.py`'s single `build_trajectory_library(height_m=config.DEFAULT_HEIGHT_M)`
+call, which bakes one fixed height into every `TrajectorySpec` except `vertical_bob`. A model
+trained on this data learns to predict roughly the training-set mean altitude rather than a real
+flow-to-altitude relationship (visible as a dense horizontal band in `models/test_predictions.png`
+and a train/val loss divergence in `models/training_curve.png`) — don't trust altitude-estimation
+results from a model trained on `converted_real_trajectories/` until this is fixed. A fix has been
+scoped (sweep `accel_decel_pulse`/`sum_of_sines`/`zigzag` reps across ~0.3–1.2m, within the
+existing `GEOFENCE_Z_M=(0.15, 1.3)` bound in `data_collection/config.py`, plus a new motif
+combining a horizontal accel/decel pulse with a concurrent altitude ramp) but not yet implemented.
 
 Read [plan.md](plan.md) and [elaborate_plan.md](elaborate_plan.md) for the full phased roadmap
 (risk register in §5, open decisions in §6) before proposing new work, and
@@ -58,16 +73,33 @@ trajectory plus `simulated_trajectories/manifest.csv` → `train.py` builds slid
 into `models/` (`<name>.config.json` + `<name>.weights.h5`; only the JSON is committed — weights
 are gitignored, regenerate by rerunning training).
 
+**Observability analysis & visualization (Phase 1, exploratory notebooks):**
+`crazyfly_simulation_3d.ipynb` loads one trajectory from `simulated_trajectories/` (preferring an
+`accel_decel` example) and runs `pybounds`' sliding-window Fisher-information analysis on it
+directly — the in-repo, data-driven counterpart to `references/B_empirical_nonlinear_observability_pybounds.ipynb`'s
+worked example. `visualize_trajectories.ipynb` (using `utils/trajectory_visualizer.py`'s
+`TrajectoryVisualizer` class) gives a quick gallery/detail view of any generated trajectory —
+run this before trusting a new batch of generated or converted data.
+
 **Real path (Phase 3):** `data_collection/collect_data.py` flies a queued trajectory library
 (`data_collection/trajectories.py`) on real hardware, logging IMU/flow/ToF/EKF-state/motor/power
 at up to 100 Hz per `data_collection/config.py`'s `LOG_BLOCKS`, resumable via
 `data_collection/state_store.py` + `data/progress_state.json` (see
 [data_collection/README.md](data_collection/README.md) for the full flight checklist — read it
 before running anything in that directory, it has hardware/safety prerequisites).
-`data_collection/export_to_training_format.py` then converts completed reps into the *same*
-per-trajectory-CSV-plus-manifest format `train.py` expects, so `train.py
---simulated-trajectories-dir real_trajectories --models-dir ../models_real` fine-tunes on real
-data with zero changes to `train.py` itself.
+`data_collection/export_to_training_format.py` converts completed reps into `real_trajectories/`
+(one CSV per rep + `manifest.csv`, columns `time`/`meas_r_x`/`meas_r_y`/`meas_v_x_dot`/
+`meas_v_y_dot`/`state_z` — already exactly `train.py`'s required column set). A second step,
+`utils/real_data_conversion.py`, re-packages `real_trajectories/` into
+`converted_real_trajectories/` — gzip-compressed, with a manifest schema identical to
+`simulated_trajectories/`'s (adds `index`/`seed` columns, enriches `params_json` with
+`source='real'`/`dt`/`length_s`/`n_rows`) — atomic writes + incremental manifest + a
+re-validated (not just existence-based) resume check, same as `trajectory_generator.py`. Pure
+format conversion only — it does not touch the underlying sensor values, and
+`crazyflie_data_adaptation_brief.md` flags open physics questions about those values (see below)
+that this conversion step does not resolve. `train.py --directory converted_real_trajectories`
+(the default) then trains on real data with zero changes to `train.py` itself;
+`--directory simulated_trajectories` switches to the simulated path.
 
 **Realtime path (Phase 5 skeleton, not flight-tested):** `realtime/main.py` loads a trained
 model artifact and runs `realtime/fusion_loop.py`, which wires `realtime/crazyflie_link.py`
@@ -106,8 +138,9 @@ python3 utils/trajectory_generator.py                                    # full 
 # Inspect one simulated trajectory
 python3 utils/trajectory_visualizer.py simulated_trajectories/accel_decel_0000.csv.gz
 
-# Phase 2: train the ANN altitude estimator on everything in simulated_trajectories/
+# Train the ANN altitude estimator — defaults to converted_real_trajectories/, the real data
 python3 train.py
+python3 train.py --directory simulated_trajectories   # train on simulated data instead
 python3 train.py --window-s 2.0 --epochs 200 --test-fraction 0.2
 
 # Phase 3: real flight data collection (run from data_collection/; see its README for the
@@ -117,7 +150,9 @@ cd data_collection
 python bench_test_logging.py     # verify log throughput at current config.LOG_BLOCKS rates
 python simple_flight_test.py     # minimal supervised smoke flight
 python collect_data.py           # full trajectory queue, resumable across battery swaps
-python export_to_training_format.py   # convert collected CSVs into train.py's input format
+python export_to_training_format.py   # convert collected CSVs into real_trajectories/
+cd ..
+python3 utils/real_data_conversion.py   # real_trajectories/ -> converted_real_trajectories/
 
 # Phase 5: run the (not yet flight-validated) realtime fusion loop
 python -m realtime.main --uri radio://0/80/2M --model-dir /path/to/models --model-name v1_real
@@ -178,10 +213,14 @@ constructed); check there first if `DroneSimulator.simulate(mpc=True)` throws a
 - `utils/figure_functions.py` — plotting helpers (`plot_trajectory`, `pi_axis`, `circplot`,
   heatmap/error-variance plotting) that `model/drone_simulator.py`'s `plot_trajectory` method
   depends on via `fpl.colorline_with_heading`. Requires `figurefirst` (`pip install figurefirst`),
-  not yet in any dependency manifest. `plot_trajectory_error_variance` (unused elsewhere in this
-  repo) references `Colormaps`/`colorline` without importing them and calls
-  `util.get_indices`/`util.log_interpolator`, neither of which exist in `utils/util.py` — don't
-  call it without fixing those first.
+  not yet in any dependency manifest. `import figurefirst` is deliberately *not* at module level —
+  the installed `figurefirst` version imports the `imp` stdlib module (removed in Python 3.12),
+  so a module-level import breaks `DroneModel`/`DroneSimulator` construction entirely regardless
+  of whether `plot_trajectory_error_variance` (the only function that actually needs it) is ever
+  called; the import is local to that one function instead. `plot_trajectory_error_variance`
+  (unused elsewhere in this repo) separately references `Colormaps`/`colorline` without importing
+  them and calls `util.get_indices`/`util.log_interpolator`, neither of which exist in
+  `utils/util.py` — don't call it without fixing those first.
 - `utils/fly_plot_lib.py` — vendored legacy plotting library providing `fpl.colorline_with_heading`.
   Its contents are accidentally duplicated end-to-end (~1300 lines appearing twice back-to-back);
   harmless today since Python just redefines each function with the (identical) second copy, but
