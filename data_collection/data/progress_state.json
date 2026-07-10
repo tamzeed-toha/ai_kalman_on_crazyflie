@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "trajectory_library_version": "21b1a23413c0",
+  "trajectory_library_version": "4f1a9f01c0bb",
   "created_at": "2026-07-09T17:21:33",
-  "updated_at": "2026-07-10T09:23:34",
+  "updated_at": "2026-07-10T10:31:01",
   "queue_order": [
     "hover_d3s",
     "hover_d5s",
@@ -51,7 +51,63 @@
     "accel_decel_fast_a1.20_c0.00_y",
     "accel_decel_fast_a1.20_c0.15_y",
     "zigzag_0",
-    "zigzag_1"
+    "zigzag_1",
+    "accel_decel_a0.30_c0.00_x_h0.30",
+    "accel_decel_a0.30_c0.00_x_h0.60",
+    "accel_decel_a0.30_c0.00_x_h0.90",
+    "accel_decel_a0.30_c0.00_x_h1.20",
+    "accel_decel_a0.30_c1.00_x_h0.30",
+    "accel_decel_a0.30_c1.00_x_h0.60",
+    "accel_decel_a0.30_c1.00_x_h0.90",
+    "accel_decel_a0.30_c1.00_x_h1.20",
+    "accel_decel_a0.60_c0.00_x_h0.30",
+    "accel_decel_a0.60_c0.00_x_h0.60",
+    "accel_decel_a0.60_c0.00_x_h0.90",
+    "accel_decel_a0.60_c0.00_x_h1.20",
+    "accel_decel_a0.60_c1.00_x_h0.30",
+    "accel_decel_a0.60_c1.00_x_h0.60",
+    "accel_decel_a0.60_c1.00_x_h0.90",
+    "accel_decel_a0.60_c1.00_x_h1.20",
+    "accel_decel_a0.40_c0.00_y_h0.30",
+    "accel_decel_a0.40_c0.00_y_h0.60",
+    "accel_decel_a0.40_c0.00_y_h0.90",
+    "accel_decel_a0.40_c0.00_y_h1.20",
+    "accel_decel_a0.40_c0.50_y_h0.30",
+    "accel_decel_a0.40_c0.50_y_h0.60",
+    "accel_decel_a0.40_c0.50_y_h0.90",
+    "accel_decel_a0.40_c0.50_y_h1.20",
+    "accel_decel_fast_a1.00_c0.00_x_h0.30",
+    "accel_decel_fast_a1.00_c0.00_x_h0.60",
+    "accel_decel_fast_a1.00_c0.00_x_h0.90",
+    "accel_decel_fast_a1.00_c0.00_x_h1.20",
+    "accel_decel_fast_a1.50_c0.00_x_h0.30",
+    "accel_decel_fast_a1.50_c0.00_x_h0.60",
+    "accel_decel_fast_a1.50_c0.00_x_h0.90",
+    "accel_decel_fast_a1.50_c0.00_x_h1.20",
+    "accel_decel_fast_a0.90_c0.00_y_h0.30",
+    "accel_decel_fast_a0.90_c0.00_y_h0.60",
+    "accel_decel_fast_a0.90_c0.00_y_h0.90",
+    "accel_decel_fast_a0.90_c0.00_y_h1.20",
+    "accel_decel_fast_a1.20_c0.00_y_h0.30",
+    "accel_decel_fast_a1.20_c0.00_y_h0.60",
+    "accel_decel_fast_a1.20_c0.00_y_h0.90",
+    "accel_decel_fast_a1.20_c0.00_y_h1.20",
+    "accel_decel_climb_up_x",
+    "accel_decel_climb_down_x",
+    "accel_decel_climb_up_y",
+    "accel_decel_climb_down_y",
+    "sines_x_f0.20-0.50_a0.20_h0.30",
+    "sines_x_f0.20-0.50_a0.20_h0.90",
+    "sines_y_f0.20-0.50_a0.20_h0.30",
+    "sines_y_f0.20-0.50_a0.20_h0.90",
+    "sines_x_f0.20-0.50_a0.40_h0.30",
+    "sines_x_f0.20-0.50_a0.40_h0.90",
+    "sines_y_f0.20-0.50_a0.40_h0.30",
+    "sines_y_f0.20-0.50_a0.40_h0.90",
+    "zigzag_0_h0.30",
+    "zigzag_0_h0.90",
+    "zigzag_1_h0.30",
+    "zigzag_1_h0.90"
   ],
   "completed": {
     "hover_d3s": {
@@ -1580,6 +1636,1245 @@
           "completed_at": "2026-07-10T09:21:34"
         }
       ]
+    },
+    "accel_decel_a0.30_c0.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:04"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:48"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c0.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:28"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:35"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:28:01"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c0.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:03"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:06"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c0.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:27"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:52"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c1.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:46"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:31"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c1.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:40"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:55"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c1.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:11"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:18"
+        }
+      ]
+    },
+    "accel_decel_a0.30_c1.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:31"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:11"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c0.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:24:14"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:40"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c0.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:40"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:18"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:54"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c0.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:45"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:21"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c0.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:09"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:36"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c1.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:13:35"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:25"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c1.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:24"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:39"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c1.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:44"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:24"
+        }
+      ]
+    },
+    "accel_decel_a0.60_c1.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:56"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:30"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.00_y_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:56"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:00"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.00_y_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:19"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:03"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.00_y_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:41"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:28"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.00_y_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:13:41"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:38"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:46"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.50_y_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:13"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:38"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.50_y_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:13:53"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:24"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.50_y_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:24:02"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:17"
+        }
+      ]
+    },
+    "accel_decel_a0.40_c0.50_y_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:12"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:48"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.00_c0.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:49"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:13"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.00_c0.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:44"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:23"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.00_c0.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:01"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:45"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.00_c0.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:12"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:38"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.50_c0.00_x_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:24:19"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:51"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.50_c0.00_x_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_101720",
+          "reason": "geofence_hard_land",
+          "completed_at": "2026-07-10T10:17:31"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:29"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:13"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.50_c0.00_x_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:36"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:37"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.50_c0.00_x_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:31"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:46"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:56"
+        }
+      ]
+    },
+    "accel_decel_fast_a0.90_c0.00_y_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:32"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:54"
+        }
+      ]
+    },
+    "accel_decel_fast_a0.90_c0.00_y_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:24"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:50"
+        }
+      ]
+    },
+    "accel_decel_fast_a0.90_c0.00_y_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:13:46"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:03"
+        }
+      ]
+    },
+    "accel_decel_fast_a0.90_c0.00_y_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:24:25"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:32"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:37"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:42"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.20_c0.00_y_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:13:58"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:41"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.20_c0.00_y_h0.60": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:17"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:30"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.20_c0.00_y_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:07"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:16"
+        }
+      ]
+    },
+    "accel_decel_fast_a1.20_c0.00_y_h1.20": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:16"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:06"
+        }
+      ]
+    },
+    "accel_decel_climb_up_x": {
+      "reps_required": 3,
+      "reps_completed": 3,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:22:01"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:26"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:35"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:33"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:32"
+        }
+      ]
+    },
+    "accel_decel_climb_down_x": {
+      "reps_required": 3,
+      "reps_completed": 3,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:20"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:26"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:32"
+        }
+      ]
+    },
+    "accel_decel_climb_up_y": {
+      "reps_required": 3,
+      "reps_completed": 3,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:24:08"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:29"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:29:49"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:35"
+        }
+      ]
+    },
+    "accel_decel_climb_down_y": {
+      "reps_required": 3,
+      "reps_completed": 3,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:33"
+        },
+        {
+          "rep_index": 1,
+          "status": "aborted",
+          "session_id": "20260710_101616",
+          "reason": "geofence_hard_land",
+          "completed_at": "2026-07-10T10:16:27"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:39"
+        },
+        {
+          "rep_index": 2,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:25:58"
+        }
+      ]
+    },
+    "sines_x_f0.20-0.50_a0.20_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:21"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:39"
+        }
+      ]
+    },
+    "sines_x_f0.20-0.50_a0.20_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:18:56"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102848",
+          "reason": null,
+          "completed_at": "2026-07-10T10:30:11"
+        }
+      ]
+    },
+    "sines_y_f0.20-0.50_a0.20_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:51"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:26"
+        }
+      ]
+    },
+    "sines_y_f0.20-0.50_a0.20_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_101318",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:16:01"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:02"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:28:12"
+        }
+      ]
+    },
+    "sines_x_f0.20-0.50_a0.40_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:43"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:23"
+        }
+      ]
+    },
+    "sines_x_f0.20-0.50_a0.40_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:14:33"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:23:00"
+        }
+      ]
+    },
+    "sines_y_f0.20-0.50_a0.40_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101318",
+          "reason": null,
+          "completed_at": "2026-07-10T10:15:07"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:49"
+        }
+      ]
+    },
+    "sines_y_f0.20-0.50_a0.40_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:20:51"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:15"
+        }
+      ]
+    },
+    "zigzag_0_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:20:58"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:51"
+        }
+      ]
+    },
+    "zigzag_0_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:08"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_101749",
+          "reason": null,
+          "completed_at": "2026-07-10T10:19:16"
+        }
+      ]
+    },
+    "zigzag_1_h0.30": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "aborted",
+          "session_id": "20260710_102023",
+          "reason": "geofence_soft_abort",
+          "completed_at": "2026-07-10T10:24:34"
+        },
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:26:05"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102458",
+          "reason": null,
+          "completed_at": "2026-07-10T10:27:25"
+        }
+      ]
+    },
+    "zigzag_1_h0.90": {
+      "reps_required": 2,
+      "reps_completed": 2,
+      "rep_history": [
+        {
+          "rep_index": 0,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:20:39"
+        },
+        {
+          "rep_index": 1,
+          "status": "completed",
+          "session_id": "20260710_102023",
+          "reason": null,
+          "completed_at": "2026-07-10T10:21:10"
+        }
+      ]
     }
   },
   "sessions": [
@@ -1658,6 +2953,55 @@
       "started_at": "2026-07-10T09:20:58",
       "ended_at": "2026-07-10T09:23:34",
       "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_092058.csv",
+      "end_reason": "all_trajectories_complete"
+    },
+    {
+      "session_id": "20260710_101318",
+      "started_at": "2026-07-10T10:13:18",
+      "ended_at": null,
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_101318.csv",
+      "end_reason": null
+    },
+    {
+      "session_id": "20260710_101616",
+      "started_at": "2026-07-10T10:16:16",
+      "ended_at": "2026-07-10T10:16:30",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_101616.csv",
+      "end_reason": "safety:geofence_hard_land"
+    },
+    {
+      "session_id": "20260710_101720",
+      "started_at": "2026-07-10T10:17:20",
+      "ended_at": "2026-07-10T10:17:34",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_101720.csv",
+      "end_reason": "safety:geofence_hard_land"
+    },
+    {
+      "session_id": "20260710_101749",
+      "started_at": "2026-07-10T10:17:49",
+      "ended_at": "2026-07-10T10:19:51",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_101749.csv",
+      "end_reason": "battery_low"
+    },
+    {
+      "session_id": "20260710_102023",
+      "started_at": "2026-07-10T10:20:23",
+      "ended_at": "2026-07-10T10:24:44",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_102023.csv",
+      "end_reason": "interrupted"
+    },
+    {
+      "session_id": "20260710_102458",
+      "started_at": "2026-07-10T10:24:58",
+      "ended_at": "2026-07-10T10:28:17",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_102458.csv",
+      "end_reason": "battery_low"
+    },
+    {
+      "session_id": "20260710_102848",
+      "started_at": "2026-07-10T10:28:48",
+      "ended_at": "2026-07-10T10:31:01",
+      "csv_file": "/home/melaniea/CF_workspace/crazyflie-lib-python/examples/flyrotor/ai_kalman_on_crazyflie/data_collection/data/session_20260710_102848.csv",
       "end_reason": "all_trajectories_complete"
     }
   ]
