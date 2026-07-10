@@ -402,7 +402,6 @@ OUTPUT /home/jaden/repos/ai_kalman_on_crazyflie/presentation/deck.snm
 INPUT /home/jaden/repos/ai_kalman_on_crazyflie/presentation/deck.aux
 INPUT /home/jaden/repos/ai_kalman_on_crazyflie/presentation/deck.out
 INPUT /home/jaden/repos/ai_kalman_on_crazyflie/presentation/deck.out
-INPUT /home/jaden/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecss1000.600pk
 INPUT /home/jaden/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tctt0800.600pk
 INPUT /home/jaden/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecss1200.600pk
 INPUT /home/jaden/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecsx0900.600pk
